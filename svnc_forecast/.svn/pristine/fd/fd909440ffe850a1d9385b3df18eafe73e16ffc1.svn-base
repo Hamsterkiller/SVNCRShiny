@@ -1,0 +1,32 @@
+\name{SVNE_EE_ts}
+\alias{SVNE_EE_ts}
+\docType{data}
+\title{
+%%   ~~ data name/kind ... ~~
+}
+\description{
+%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+}
+\usage{data("SVNE_EE_ts")}
+\format{
+  The format is:
+An 'xts' object on 2011-01-01/2016-02-01 containing:
+  Data: num [1:62, 1] 528 518 514 514 551 ...
+  Indexed by objects of class: [Date] TZ: UTC
+  xts Attributes:  
+ NULL
+}
+\details{
+%%  ~~ If necessary, more details than the __description__ above ~~
+}
+\source{
+%%  ~~ reference to a publication or URL from which the data were obtained ~~
+}
+\references{
+%%  ~~ possibly secondary sources and usages ~~
+}
+\examples{
+data(SVNE_EE_ts)
+## maybe str(SVNE_EE_ts) ; plot(SVNE_EE_ts) ...
+}
+\keyword{datasets}

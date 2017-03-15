@@ -1,0 +1,51 @@
+\name{SVNC_M_ts_components}
+\alias{SVNC_M_ts_components}
+\docType{data}
+\title{
+%%   ~~ data name/kind ... ~~
+}
+\description{
+%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+}
+\usage{data("SVNC_M_ts_components")}
+\format{
+  The format is:
+List of 6
+ $ x       : ts [1:62, 1] 273174 217084 228288 236932 240393 ...
+  ..- attr(*, "index")= atomic [1:62] 1.29e+09 1.30e+09 1.30e+09 1.30e+09 1.30e+09 ...
+  .. ..- attr(*, "tzone")= chr "UTC"
+  .. ..- attr(*, "tclass")= chr "Date"
+  ..- attr(*, ".indexCLASS")= chr "Date"
+  ..- attr(*, "tclass")= chr "Date"
+  ..- attr(*, ".indexTZ")= chr "UTC"
+  ..- attr(*, "tzone")= chr "UTC"
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr "Series 1"
+  ..- attr(*, "tsp")= num [1:3] 2011 2016 12
+ $ seasonal: Time-Series [1:62] from 2011 to 2016: 17968 -26648 22575 6759 28880 ...
+ $ trend   : ts [1:62, 1] NA NA NA NA NA ...
+  ..- attr(*, "tsp")= num [1:3] 2011 2016 12
+ $ random  : ts [1:62, 1] NA NA NA NA NA ...
+  ..- attr(*, "tsp")= num [1:3] 2011 2016 12
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr "x - seasonal"
+ $ figure  : num [1:12] 17968 -26648 22575 6759 28880 ...
+ $ type    : chr "additive"
+ - attr(*, "class")= chr "decomposed.ts"
+}
+\details{
+%%  ~~ If necessary, more details than the __description__ above ~~
+}
+\source{
+%%  ~~ reference to a publication or URL from which the data were obtained ~~
+}
+\references{
+%%  ~~ possibly secondary sources and usages ~~
+}
+\examples{
+data(SVNC_M_ts_components)
+## maybe str(SVNC_M_ts_components) ; plot(SVNC_M_ts_components) ...
+}
+\keyword{datasets}

@@ -1,0 +1,10 @@
+Package: tsauxfunc
+Type: Package
+Title: Time Series: Auxiliary Functions
+Version: 1.0-1
+Date: 2016-08-26
+Author: Ilya Zemskov
+Maintainer: Ilya Zemskov <izemskov1987@gmail.com>
+Depends: R (>= 3.1.0), xts, tseries, forecast
+Description: This package provides auxiliary functions for time-series analysis and forecasting.
+License: GPl

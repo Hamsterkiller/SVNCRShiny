@@ -1,0 +1,6 @@
+* installing *source* package 'tsauxfunc' ...
+** libs
+ѕредупреждение: работающа€ команда 'make -f "C:/PROGRA~1/R/R-32~1.4RE/etc/i386/Makeconf" -f "C:/PROGRA~1/R/R-32~1.4RE/share/make/winshlib.mk" SHLIB="tsauxfunc.dll" OBJECTS=""' имеет статус 127
+ѕредупреждение: работающа€ команда 'make -f "C:/PROGRA~1/R/R-32~1.4RE/etc/i386/Makeconf" -f "C:/PROGRA~1/R/R-32~1.4RE/share/make/winshlib.mk" SHLIB="tsauxfunc.dll" OBJECTS="" symbols.rds' имеет статус 127
+ERROR: compilation failed for package 'tsauxfunc'
+* removing 'C:/!zemskov/SVNCForecast/packages/tsauxfunc.Rcheck/tsauxfunc'

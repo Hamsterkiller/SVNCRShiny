@@ -1,0 +1,51 @@
+\name{components}
+\alias{components}
+\docType{data}
+\title{
+%%   ~~ data name/kind ... ~~
+}
+\description{
+%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+}
+\usage{data("components")}
+\format{
+  The format is:
+List of 6
+ $ x       : ts [1:62, 1] 528 518 514 514 551 ...
+  ..- attr(*, "index")= atomic [1:62] 1.29e+09 1.30e+09 1.30e+09 1.30e+09 1.30e+09 ...
+  .. ..- attr(*, "tzone")= chr "UTC"
+  .. ..- attr(*, "tclass")= chr "Date"
+  ..- attr(*, ".indexCLASS")= chr "Date"
+  ..- attr(*, "tclass")= chr "Date"
+  ..- attr(*, ".indexTZ")= chr "UTC"
+  ..- attr(*, "tzone")= chr "UTC"
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr "Series 1"
+  ..- attr(*, "tsp")= num [1:3] 1980 1985 12
+ $ seasonal: Time-Series [1:62] from 1980 to 1985: 2.62 33.06 19.49 30.29 -55.06 ...
+ $ trend   : ts [1:62, 1] NA NA NA NA NA ...
+  ..- attr(*, "tsp")= num [1:3] 1980 1985 12
+ $ random  : ts [1:62, 1] NA NA NA NA NA ...
+  ..- attr(*, "tsp")= num [1:3] 1980 1985 12
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr "x - seasonal"
+ $ figure  : num [1:12] 2.62 33.06 19.49 30.29 -55.06 ...
+ $ type    : chr "additive"
+ - attr(*, "class")= chr "decomposed.ts"
+}
+\details{
+%%  ~~ If necessary, more details than the __description__ above ~~
+}
+\source{
+%%  ~~ reference to a publication or URL from which the data were obtained ~~
+}
+\references{
+%%  ~~ possibly secondary sources and usages ~~
+}
+\examples{
+data(components)
+## maybe str(components) ; plot(components) ...
+}
+\keyword{datasets}

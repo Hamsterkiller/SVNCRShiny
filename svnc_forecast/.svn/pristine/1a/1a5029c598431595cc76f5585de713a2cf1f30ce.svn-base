@@ -1,0 +1,51 @@
+#### loading data ####
+load("SVNC_P_V_KOM_FACT.RData")
+
+#### transforming data from long to wide format ####
+pabaksb1_data <- svnc_p_v_kom[svnc_p_v_kom$TCODE == 'PABAKSB1', ]
+pabaksb1_data <- pabaksb1_data[order(pabaksb1_data$TDATE), ]
+# deleting august for testing quality of forecasting
+pabaksb1_data <- pabaksb1_data[pabaksb1_data$TDATE < as.Date('2016-07-01'), ]
+# creating lag-variables
+#pabaksb1_data$P_VC_UNREG_AVG_L1 <- lag(pabaksb1_data$P_VC_UNREG_AVG, n = 1)
+pabaksb1_data$P_VC_UNREG_AVG_L2 <- lag(pabaksb1_data$P_VC_UNREG_AVG, n = 2)
+pabaksb1_data$P_VC_UNREG_AVG_L3 <- lag(pabaksb1_data$P_VC_UNREG_AVG, n = 3)
+pabaksb1_data$P_VC_UNREG_AVG_L4 <- lag(pabaksb1_data$P_VC_UNREG_AVG, n = 4)
+pabaksb1_data$P_VC_UNREG_AVG_L12 <- lag(pabaksb1_data$P_VC_UNREG_AVG, n = 12)
+#pabaksb1_data$P_NC_UNREG_AVG_L1 <- lag(pabaksb1_data$P_NC_UNREG_AVG, n = 1)
+pabaksb1_data$P_NC_UNREG_AVG_L2 <- lag(pabaksb1_data$P_NC_UNREG_AVG, n = 2)
+pabaksb1_data$P_NC_UNREG_AVG_L3 <- lag(pabaksb1_data$P_NC_UNREG_AVG, n = 3)
+pabaksb1_data$P_NC_UNREG_AVG_L4 <- lag(pabaksb1_data$P_NC_UNREG_AVG, n = 4)
+pabaksb1_data$P_NC_UNREG_AVG_L12 <- lag(pabaksb1_data$P_NC_UNREG_AVG, n = 12)
+# deleting rows with NAs
+pabaksb1_data_nona <- na.omit(pabaksb1_data)
+
+# normalizing regressors
+pabaksb1_data_nona$P_NC_UNREG_AVG <- scale(pabaksb1_data_nona$P_NC_UNREG_AVG) 
+#pabaksb1_data_nona$P_NC_UNREG_AVG_L1 <- scale(pabaksb1_data_nona$P_NC_UNREG_AVG_L1) 
+pabaksb1_data_nona$P_NC_UNREG_AVG_L2 <- scale(pabaksb1_data_nona$P_NC_UNREG_AVG_L2) 
+pabaksb1_data_nona$P_NC_UNREG_AVG_L3 <- scale(pabaksb1_data_nona$P_NC_UNREG_AVG_L3) 
+pabaksb1_data_nona$P_NC_UNREG_AVG_L4 <- scale(pabaksb1_data_nona$P_NC_UNREG_AVG_L4) 
+pabaksb1_data_nona$P_NC_UNREG_AVG_L12 <- scale(pabaksb1_data_nona$P_NC_UNREG_AVG_L12) 
+pabaksb1_data_nona$PIKE_FACT <- scale(pabaksb1_data_nona$PIKE_FACT)
+pabaksb1_data_nona$P_VC_UNREG_AVG <- scale(pabaksb1_data_nona$P_VC_UNREG_AVG) 
+#pabaksb1_data_nona$P_VC_UNREG_AVG_L1 <- scale(pabaksb1_data_nona$P_VC_UNREG_AVG_L1) 
+pabaksb1_data_nona$P_VC_UNREG_AVG_L2 <- scale(pabaksb1_data_nona$P_VC_UNREG_AVG_L2) 
+pabaksb1_data_nona$P_VC_UNREG_AVG_L3 <- scale(pabaksb1_data_nona$P_VC_UNREG_AVG_L3) 
+pabaksb1_data_nona$P_VC_UNREG_AVG_L4 <- scale(pabaksb1_data_nona$P_VC_UNREG_AVG_L4) 
+pabaksb1_data_nona$P_VC_UNREG_AVG_L12 <- scale(pabaksb1_data_nona$P_VC_UNREG_AVG_L12) 
+pabaksb1_data_nona$VOLUME <- scale(pabaksb1_data_nona$VOLUME)
+pabaksb1_data_nona$KOM_PRICE <- scale(pabaksb1_data_nona$KOM_PRICE)
+
+#### building iterated boost model ####
+pabaksb1_boost_model <- glmboost(P_NC_UNREG_AVG ~ P_NC_UNREG_AVG_L2 + 
+                                   P_NC_UNREG_AVG_L3 + P_NC_UNREG_AVG_L4 + 
+                                   P_NC_UNREG_AVG_L12 + PIKE_FACT + KOM_PRICE, 
+                                 data = pabaksb1_data_nona, control = boost_control(mstop = 100))
+pabaksb_fitted <- pabaksb1_boost_model$fitted()
+
+# main boosting cycle
+for (i in 1:500) {
+  new_values <- pabaksb1_data$P_NC_UNREG_AVG[1:12]
+}
+

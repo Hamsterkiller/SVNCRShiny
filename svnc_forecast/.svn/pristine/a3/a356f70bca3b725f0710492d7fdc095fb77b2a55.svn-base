@@ -1,0 +1,31 @@
+\name{for_plot_EE}
+\alias{for_plot_EE}
+\docType{data}
+\title{
+%%   ~~ data name/kind ... ~~
+}
+\description{
+%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+}
+\usage{data("for_plot_EE")}
+\format{
+  A data frame with 62 observations on the following 2 variables.
+  \describe{
+    \item{\code{DATE}}{a Date}
+    \item{\code{SVNC_EE}}{a numeric vector}
+  }
+}
+\details{
+%%  ~~ If necessary, more details than the __description__ above ~~
+}
+\source{
+%%  ~~ reference to a publication or URL from which the data were obtained ~~
+}
+\references{
+%%  ~~ possibly secondary sources and usages ~~
+}
+\examples{
+data(for_plot_EE)
+## maybe str(for_plot_EE) ; plot(for_plot_EE) ...
+}
+\keyword{datasets}

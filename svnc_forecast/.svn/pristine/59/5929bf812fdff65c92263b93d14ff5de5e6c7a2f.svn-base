@@ -1,0 +1,162 @@
+##### Initializing ####
+library(tsauxfunc)
+setwd("C:/!zemskov/svnc_forecast/data_sources")
+load("SVNC_FACT_N_EE.RData")
+
+#### PREPROCESSING ####
+svnc_src <- retrieved_data
+rm(retrieved_data)
+svnc_src$date <- as.Date(svnc_src$TDATE)
+data <- svnc_src
+svnc_src <- svnc_src[, c('date', 'TCODE', 'P_NC_UNREG_AVG', 'P_VC_UNREG_AVG')]
+last_fact_date <- as.character(cut(as.Date(cut(Sys.Date(), "month")) - 1, "month"))
+svnc_src <- filterActuals(svnc_src, "date", "TCODE", last_fact_date)
+svnc_src$TCODE <- as.factor(svnc_src$TCODE)
+svnc_hs <- rangeByHistorySize(svnc_src, as.factor(svnc_src$TCODE))
+svnc_hs_merged <- merge(svnc_src, svnc_hs, 
+                        by.x = 'TCODE', by.y = 'FactorLevel', all.x = TRUE, sort = TRUE)
+svnc_hs_merged <- svnc_hs_merged[order(svnc_hs_merged$TCODE, svnc_hs_merged$date), ]
+rm(svnc_hs)
+svnc_short <- svnc_hs_merged[svnc_hs_merged$HistorySize < 24 , ] 
+svnc_long <- svnc_hs_merged[svnc_hs_merged$HistorySize >= 24 , ]
+rm(svnc_hs_merged)
+
+#### PREDICTION FOR LONG DATA ####
+
+predict_price <- function(cur_ts, h, n) {
+  tryCatch(
+    {
+      print("Building Holt-Winters model...")
+      current_model <- HoltWinters(cur_ts)
+      return (predict(current_model, n = h)[n])
+    }, error = function(cond) {
+      message("Holt-Winters model optimization failed to converge!")
+      print("Starting calculation with default algorithm...")
+      print("Algorithm: prediction = prev_month_cur_year/
+            (prev_month_prev_year*cur_month_prev_year)")
+      return (last(lag(cur_ts)) / last(lag(cur_ts, 13)) * last(lag(cur_ts, 12)))
+    }
+  )
+}
+
+hwforecast_n_step_fwrd <- function(df, group.var, date.var, target.var, h, n) {
+  require(xts)
+  require(tseries)
+  predictions <- list()
+  # safe copying
+  tbl <- df[, c(group.var , date.var, target.var)]
+  tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+  for (i in unique(tbl[, group.var])) {
+    # partitioning by group_var values
+    one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+    start_date <- min(one_piece[, date.var])
+    # making a TS object
+    one_piece_ts <- toTimeSeries(one_piece, date.var, 12, start_date)
+    prediction_hw <- predict_price(one_piece_ts, h, n)
+    prediction_arima <- predict_price_short(one_piece_ts, h, n)
+    prediction <- mean(c(prediction_hw, prediction_arima))
+    if (prediction < 0) prediction <- prediction_arima
+    predictions[i] <- prediction
+    print(predictions[i])
+  }
+  return (predictions)
+}
+
+fcst_svnc_m_long <- hwforecast_n_step_fwrd(svnc_long, "TCODE", 
+                                           "date", "P_NC_UNREG_AVG", 2, 2)
+fcst_svnc_ee_long <- hwforecast_n_step_fwrd(svnc_long, "TCODE", 
+                                           "date", "P_VC_UNREG_AVG", 2, 2)
+
+# SHORT
+
+predict_price_short <- function(cur_ts, nsteps, n) {
+  require(forecast)
+  tryCatch(
+    {
+      print("Building Arima model...")
+      current_model <- auto.arima(cur_ts)
+      return (forecast(current_model, h = nsteps)$mean[n])
+    }, error = function(cond) {
+      message("Arima model optimization failed to converge!")
+      message("MA prediction failed!")
+      print("Calculating simple mean...")
+      return (mean(cur_ts))
+    }
+  )
+}
+
+shortForecast <- function(df, group.var, date.var, target.var, h, n) {
+  require(TTR)
+  require(xts)
+  require(tseries)
+  predictions <- list()
+  # safe copying
+  tbl <- df[, c(group.var , date.var, target.var)]
+  tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+  for (i in unique(tbl[, group.var])) {
+    # partitioning by group_var values
+    one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+    start_date <- min(one_piece[, date.var])
+    # making a TS object
+    one_piece_ts <- toTimeSeries(one_piece, "date", 1, start_date)
+    predictions[i] <- predict_price_short(one_piece_ts, h, n)
+    print(predictions[i])
+      }
+  return (predictions)
+}
+
+fcst_svnc_m_short <- shortForecast(svnc_short, "TCODE", 
+                                           "date", "P_NC_UNREG_AVG", 2, 2)
+fcst_svnc_ee_short <- shortForecast(svnc_short, "TCODE", 
+                                   "date", "P_VC_UNREG_AVG", 2, 2)
+
+# merging forecasted values
+tcodes_long <- data.frame(TCODE = names(fcst_svnc_m_long),
+                          P_NC_UNREG_AVG = as.numeric(fcst_svnc_m_long), 
+                          P_VC_UNREG_AVG = as.numeric(fcst_svnc_ee_long))
+tcodes_short <- data.frame(TCODE = names(fcst_svnc_m_short), 
+                          P_NC_UNREG_AVG = as.numeric(fcst_svnc_m_short), 
+                          P_VC_UNREG_AVG = as.numeric(fcst_svnc_ee_short))
+tcodes <- rbind(tcodes_long, tcodes_short)
+tpcodesregs <- data[data$date == as.Date('2016-06-01'), 
+                          c('TCODE', 'PCODE', 'REGION_CODE')]
+result <- merge(tpcodesregs, tcodes, 
+                by = 'TCODE', all.x = TRUE, sort = TRUE)[, c('PCODE', 'REGION_CODE', 
+                                                             'P_NC_UNREG_AVG', 'P_VC_UNREG_AVG')]
+library(dplyr)
+result_grouped <- summarize(group_by(result, PCODE, REGION_CODE), 
+                            PRICE_N = mean(P_NC_UNREG_AVG), PRICE_EE = mean(P_VC_UNREG_AVG))
+result_grouped <- result_grouped[with(result_grouped, order(PCODE, REGION_CODE)), ]
+
+library(xlsx)
+write.xlsx(as.data.frame(result_grouped), file = 'svnc_m_aug2016_fcst(hw-arima-assembly).xlsx', sheetName = 'SVNC_M')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

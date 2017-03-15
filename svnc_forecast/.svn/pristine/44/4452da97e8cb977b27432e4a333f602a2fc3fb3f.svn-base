@@ -1,0 +1,39 @@
+\name{testing_ts_M}
+\alias{testing_ts_M}
+\docType{data}
+\title{
+%%   ~~ data name/kind ... ~~
+}
+\description{
+%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+}
+\usage{data("testing_ts_M")}
+\format{
+  The format is:
+ ts [1, 1] 354454
+ - attr(*, "index")= atomic [1:1] 1.45e+09
+  ..- attr(*, "tzone")= chr "UTC"
+  ..- attr(*, "tclass")= chr "Date"
+ - attr(*, ".indexCLASS")= chr "Date"
+ - attr(*, "tclass")= chr "Date"
+ - attr(*, ".indexTZ")= chr "UTC"
+ - attr(*, "tzone")= chr "UTC"
+ - attr(*, "dimnames")=List of 2
+  ..$ : NULL
+  ..$ : chr "Series 1"
+ - attr(*, "tsp")= num [1:3] 2016 2016 12
+}
+\details{
+%%  ~~ If necessary, more details than the __description__ above ~~
+}
+\source{
+%%  ~~ reference to a publication or URL from which the data were obtained ~~
+}
+\references{
+%%  ~~ possibly secondary sources and usages ~~
+}
+\examples{
+data(testing_ts_M)
+## maybe str(testing_ts_M) ; plot(testing_ts_M) ...
+}
+\keyword{datasets}

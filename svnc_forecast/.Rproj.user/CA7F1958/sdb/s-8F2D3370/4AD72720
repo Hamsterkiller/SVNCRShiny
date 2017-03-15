@@ -1,0 +1,17 @@
+{
+    "contents" : "library(shiny)\n\nfluidPage(\n  tabsetPanel(\n    tabPanel(\"Анализ\",\n      fluidRow(\n        headerPanel('Анализ СВНЦ на электроэнергию и мощность по ГП')),\n        fluidRow(\n          column(4, \n          h3('Фильтры'),\n          selectInput(inputId = \"pcode\", label = \"Сначала выберите коды участников\", \n                      choices = pcodes, multiple = TRUE),\n          uiOutput(inputId = \"regs\", \"regions\"),\n          selectInput(inputId = \"grapIndicator\", label = \"Выберите показатель\", \n                      choices = c(\"СВНЦ на электроэнергию\", \"СВНЦ на мощность\")),\n          downloadButton('downloadFactData', 'Сохранить данные')),\n          column(8, h3('Динамика СВНЦ'),\n                 plotOutput('fact_svnc'))\n          ),\n        fluidRow(\n          tableOutput('svnc_table')\n      )\n    ),\n    tabPanel(\"Прогноз\",\n      fluidRow(\n        headerPanel('Прогнозирование СВНЦ на электроэнергию и мощность по ГП')),\n      fluidRow(\n        # every column breaks in 12 units\n        column(4,\n          h3(\"Параметры прогноза\"),\n          selectInput(inputId = \"pcd_forecast\", label = \"Выберите код участника\", \n                      choices = pcodes_fcst),\n          uiOutput(inputId = \"regs_forecast\", \"regions_forecast\"), # reactive list with regions\n          fluidRow(\n            column(4, \n                    actionButton(inputId = \"launchForecast\", label = \"Прогноз\")\n                   ),\n            column(8,\n                    checkboxInput(\"all\", label = \"По всем парам ГП-регион\", value = FALSE)\n                    )\n            \n          ),\n          fluidRow(\n            column(4,\n                   downloadButton('downloadForecastData', 'Сохранить данные')    \n                  ),\n            column(\n              8\n            )\n          )\n        ),\n        column(8 \n          \n        )\n      ),\n      fluidRow(\n        h3(\"Результаты прогноза на \", \n           as.character(format(as.Date(cut(max(svnc_data$TDATE) + 62, \"month\")), \"%b %Y\")))\n      ),\n      fluidRow(\n        tableOutput('svnc_n_fcst')\n      )\n    )\n  )\n)",
+    "created" : 1482756833644.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1711774292",
+    "id" : "4AD72720",
+    "lastKnownWriteTime" : 1488367890,
+    "path" : "C:/!zemskov/svnc_forecast/shiny_app/ui.R",
+    "project_path" : "shiny_app/ui.R",
+    "properties" : {
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

@@ -1,0 +1,58 @@
+\name{HoltWinters_model_EE_log}
+\alias{HoltWinters_model_EE_log}
+\docType{data}
+\title{
+%%   ~~ data name/kind ... ~~
+}
+\description{
+%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+}
+\usage{data("HoltWinters_model_EE_log")}
+\format{
+  The format is:
+List of 9
+ $ fitted      : mts [1:49, 1:4] 6.84 6.86 6.81 6.82 6.78 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr [1:4] "xhat" "level" "trend" "season"
+  ..- attr(*, "tsp")= num [1:3] 2012 2016 12
+  ..- attr(*, "class")= chr [1:3] "mts" "ts" "matrix"
+ $ x           : ts [1:61, 1] 6.85 7.05 6.88 6.9 6.86 ...
+  ..- attr(*, "index")= atomic [1:61] 1.29e+09 1.30e+09 1.30e+09 1.30e+09 1.30e+09 ...
+  .. ..- attr(*, "tzone")= chr "UTC"
+  .. ..- attr(*, "tclass")= chr "Date"
+  ..- attr(*, ".indexCLASS")= chr "Date"
+  ..- attr(*, "tclass")= chr "Date"
+  ..- attr(*, ".indexTZ")= chr "UTC"
+  ..- attr(*, "tzone")= chr "UTC"
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr "Series 1"
+  ..- attr(*, "tsp")= num [1:3] 2011 2016 12
+ $ alpha       : Named num 0.438
+  ..- attr(*, "names")= chr "alpha"
+ $ beta        : Named num 0
+  ..- attr(*, "names")= chr "beta"
+ $ gamma       : Named num 0.957
+  ..- attr(*, "names")= chr "gamma"
+ $ coefficients: Named num [1:14] 7.11401 0.00169 -0.00856 -0.01716 0.0046 ...
+  ..- attr(*, "names")= chr [1:14] "a" "b" "s1" "s2" ...
+ $ seasonal    : chr "additive"
+ $ SSE         : num 0.145
+ $ call        : language HoltWinters(x = training_ts_EE_log)
+ - attr(*, "class")= chr "HoltWinters"
+}
+\details{
+%%  ~~ If necessary, more details than the __description__ above ~~
+}
+\source{
+%%  ~~ reference to a publication or URL from which the data were obtained ~~
+}
+\references{
+%%  ~~ possibly secondary sources and usages ~~
+}
+\examples{
+data(HoltWinters_model_EE_log)
+## maybe str(HoltWinters_model_EE_log) ; plot(HoltWinters_model_EE_log) ...
+}
+\keyword{datasets}

@@ -1,0 +1,188 @@
+setwd("C:/!zemskov/SVNCForecast/data_sources")
+svnc_m_src <- read.csv("./SVNC_M_SRC.csv", header = TRUE, sep=";", 
+                      dec=".", stringsAsFactors = FALSE)
+svnc_m_src$date <- as.Date(svnc_m_src$TDATE)
+data <- svnc_m_src
+svnc_m_src <- svnc_m_src[, c('date', 'TCODE', 'P_NC_UNREG_AVG')]
+svnc_m_src$TCODE <- as.factor(svnc_m_src$TCODE)
+library(tsauxfunc)
+svnc_m_hs <- rangeByHistorySize(svnc_m_src, as.factor(svnc_m_src$TCODE))
+svnc_m_hs_merged <- merge(svnc_m_src, svnc_m_hs, 
+                        by.x = 'TCODE', by.y = 'FactorLevel', all.x = TRUE, sort = TRUE)
+svnc_m_hs_merged <- svnc_m_hs_merged[order(svnc_m_hs_merged$TCODE, svnc_m_hs_merged$date), ]
+svnc_m_short <- svnc_m_hs_merged[svnc_m_hs_merged$HistorySize < 24 , ] 
+svnc_m_long <- svnc_m_hs_merged[svnc_m_hs_merged$HistorySize >= 24 , ]
+
+# LONG
+
+predict_price <- function(cur_ts, h, n) {
+  tryCatch(
+    {
+      print("Building Holt-Winters model...")
+      current_model <- HoltWinters(cur_ts)
+      return (predict(current_model, n = h)[n])
+    }, error = function(cond) {
+      message("Holt-Winters model optimization failed to converge!")
+      print("Starting calculation with default algorithm...")
+      print("Algorithm: prediction = prev_month_cur_year/
+            (prev_month_prev_year*cur_month_prev_year)")
+      return (last(lag(cur_ts)) / last(lag(cur_ts, 13)) * last(lag(cur_ts, 12)))
+    }
+  )
+}
+
+hwforecast_n_step_fwrd <- function(df, group.var, date.var, target.var, h, n) {
+  require(xts)
+  require(tseries)
+  predictions <- list()
+  # safe copying
+  tbl <- df[, c(group.var , date.var, target.var)]
+  tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+  for (i in unique(tbl[, group.var])) {
+    # partitioning by group_var values
+    one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+    start_date <- min(one_piece[, date.var])
+    # making a TS object
+    one_piece_ts <- toTimeSeries(one_piece, "date", 12, start_date)
+    predictions[i] <- predict_price(one_piece_ts, h, n)
+    print(predictions[i])
+  }
+  return (predictions)
+}
+
+fcst_svnc_m_long <- hwforecast_n_step_fwrd(svnc_m_long, "TCODE", 
+                                           "date", "P_NC_UNREG_AVG", 2, 2)
+
+# SHORT
+
+predict_price_short <- function(cur_ts, h, n) {
+  require(forecast)
+  tryCatch(
+    {
+      print("Building Arima model...")
+      current_model <- auto.arima(cur_ts)
+      return (predict(current_model, n.ahead = h)[1][[1]][n])
+    }, error = function(cond) {
+      message("Arima model optimization failed to converge!")
+      message("MA prediction failed!")
+      print("Calculating simple mean...")
+      return (mean(cur_ts))
+    }
+  )
+}
+
+shortForecast <- function(df, group.var, date.var, target.var, h, n) {
+  require(TTR)
+  require(xts)
+  require(tseries)
+  predictions <- list()
+  # safe copying
+  tbl <- df[, c(group.var , date.var, target.var)]
+  tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+  for (i in unique(tbl[, group.var])) {
+    # partitioning by group_var values
+    one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+    start_date <- min(one_piece[, date.var])
+    # making a TS object
+    one_piece_ts <- toTimeSeries(one_piece, "date", 1, start_date)
+    predictions[i] <- predict_price_short(one_piece_ts, h, n)
+    print(predictions[i])
+      }
+  return (predictions)
+}
+
+fcst_svnc_m_short <- shortForecast(svnc_m_short, "TCODE", 
+                                           "date", "P_NC_UNREG_AVG", 2, 2)
+
+# merging forecasted values
+tcodes_long <- data.frame(TCODE = names(fcst_svnc_m_long),
+                          P_NC_UNREG_AVG = as.numeric(fcst_svnc_m_long))
+tcodes_short <- data.frame(TCODE = names(fcst_svnc_m_short), 
+                          P_NC_UNREG_AVG = as.numeric(fcst_svnc_m_short))
+tcodes <- rbind(tcodes_long, tcodes_short)
+tpcodesregs <- data[data$date == as.Date('2015-05-01'), 
+                          c('TCODE', 'PCODE', 'REGION_CODE')]
+result <- merge(tpcodesregs, tcodes, 
+                by = 'TCODE', all.x = TRUE, sort = TRUE)[, c('PCODE', 'REGION_CODE', 'P_NC_UNREG_AVG')]
+library(dplyr)
+result_grouped <- summarize(group_by(result, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+result_grouped <- result_grouped[with(result_grouped, order(PCODE, REGION_CODE)), ]
+
+library(xlsx)
+write.xlsx(result_grouped, file = 'svnc_m_jul2016.xlsx', sheetName = 'SVNC_M')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# validation for MAY2016
+
+svnc_m_src_may <- svnc_m_src[svnc_m_src$date < as.Date('2016-04-01'), ]
+svnc_m_h_may <- rangeByHistorySize(svnc_m_src_may, as.factor(svnc_m_src_may$TCODE))
+svnc_m_hs_merged_may <- merge(svnc_m_src_may, svnc_m_h_may, 
+                          by.x = 'TCODE', by.y = 'FactorLevel', all.x = TRUE, sort = TRUE)
+svnc_m_hs_merged_may <- svnc_m_hs_merged_may[order(svnc_m_hs_merged_may$TCODE, 
+                                                   svnc_m_hs_merged_may$date), ]
+svnc_m_short_may <- svnc_m_hs_merged_may[svnc_m_hs_merged_may$HistorySize < 24 , ] 
+svnc_m_long_may <- svnc_m_hs_merged_may[svnc_m_hs_merged_may$HistorySize >= 24 , ]
+
+
+fcst_svnc_m_long_may <- hwforecast_n_step_fwrd(svnc_m_long_may, "TCODE", 
+                                           "date", "P_NC_UNREG_AVG", 2, 2)
+fcst_svnc_m_short_may <- shortForecast(svnc_m_short_may, "TCODE", 
+                                   "date", "P_NC_UNREG_AVG", 2, 2)
+
+
+tcodes_long_may <- data.frame(TCODE = names(fcst_svnc_m_long_may),
+                          P_NC_UNREG_AVG = as.numeric(fcst_svnc_m_long_may))
+tcodes_short_may <- data.frame(TCODE = names(fcst_svnc_m_short_may), 
+                           P_NC_UNREG_AVG = as.numeric(fcst_svnc_m_short_may))
+tcodes_may <- rbind(tcodes_long_may, tcodes_short_may)
+tpcodesregs_may <- data[data$date == as.Date('2015-03-01'), 
+                    c('TCODE', 'PCODE', 'REGION_CODE')]
+result_may <- merge(tpcodesregs_may, tcodes, 
+                by = 'TCODE', all.x = TRUE, sort = TRUE)[, c('PCODE', 'REGION_CODE', 'P_NC_UNREG_AVG')]
+library(dplyr)
+result_grouped_may <- summarize(group_by(result_may, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+
+## compared to fact
+fact_may <- data[data$date == as.Date('2016-05-01'), ][, c('TCODE', 'P_NC_UNREG_AVG')]
+fact_may_res <- merge(tpcodesregs_may, fact_may, 
+                      by = 'TCODE', all.x = TRUE, sort = TRUE)[, c('PCODE', 'REGION_CODE', 'P_NC_UNREG_AVG')]
+fact_may_res_grouped <- summarize(group_by(fact_may_res, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+
+
+comparing <- merge(result_grouped_may, fact_may_res_grouped, 
+                   by = c('PCODE', 'REGION_CODE'), all.x = TRUE, sort = TRUE)
+
+names(comparing) <- c('PCODE', 'REGION_CODE', 'PREDICTION', 'FACT')
+comparing$delta <- abs(100 * (comparing$FACT - comparing$PREDICTION)/comparing$FACT)
+View(comparing)
+mean(comparing$delta)
+median(comparing$delta)
+sd(comparing$delta)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

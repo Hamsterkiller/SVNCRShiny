@@ -1,0 +1,285 @@
+##### Initializing ####
+rm(list = ls())
+library(tsauxfunc)
+setwd("C:/!zemskov/svnc_forecast/data_sources")
+# SVNC
+load("SVNC_P_V_KOM_FACT.RData")
+# Pikes
+load("PIKES_FACT.RData")
+# Volumes
+load("VOLUMES_FACT.RData")
+# KOM Prices
+load("KOM_PZ_PRICES.RData")
+# DPG-info
+load("DPG_GP_INFO.RData")
+# forecasting month
+forecasting_month <- as.Date(cut(as.Date(Sys.Date()) + 15, "month"))
+last_fact_date <- as.character(cut(forecasting_month - 61, "month"))
+
+
+################ PREPROCESSING ################
+
+# SVNC
+# Filtering data by the forecasting minth
+svnc_src <- svnc_p_v_kom
+#svnc_src <- svnc_src[svnc_src$TDATE < last_fact_date, ]
+rm(svnc_p_v_kom)
+#svnc_src$date <- as.Date(svnc_src$TDATE)
+data <- svnc_src
+svnc_src <- svnc_src[, c('TDATE', 'TCODE', 'P_NC_UNREG_AVG', 'P_VC_UNREG_AVG', 
+                         'VOLUME', 'PIKE_FACT')]
+svnc_src <- filterActuals(svnc_src, "TDATE", "TCODE", last_fact_date)
+svnc_src$TCODE <- as.factor(svnc_src$TCODE)
+svnc_hs <- rangeByHistorySize(svnc_src, as.factor(svnc_src$TCODE))
+svnc_hs_merged <- merge(svnc_src, svnc_hs, 
+                        by.x = 'TCODE', by.y = 'FactorLevel', all.x = TRUE, sort = TRUE)
+svnc_hs_merged <- svnc_hs_merged[order(svnc_hs_merged$TCODE, svnc_hs_merged$TDATE), ]
+rm(svnc_hs)
+svnc_short <- svnc_hs_merged[svnc_hs_merged$HistorySize < 24 , ] 
+svnc_long <- svnc_hs_merged[svnc_hs_merged$HistorySize >= 24 , ]
+
+# PIKES
+# Filtering data by the forecasting minth
+pikes <- pikes[pikes$TDATE < forecasting_month, ]
+SVNC_DPG_list <- unique(svnc_hs_merged[svnc_hs_merged$TDATE > forecasting_month - 62, ]$TCODE)
+rm(svnc_hs_merged)
+pikes <- pikes[which(pikes$TCODE %in% SVNC_DPG_list), ]
+# ranging by history
+pikes_hs <- rangeByHistorySize(pikes, as.factor(pikes$TCODE))
+pikes_hs_merged <- merge(pikes, pikes_hs, 
+                        by.x = 'TCODE', by.y = 'FactorLevel', all.x = TRUE, sort = TRUE)
+pikes_hs_merged <- pikes_hs_merged[order(pikes_hs_merged$TCODE, pikes_hs_merged$TDATE), ]
+rm(pikes_hs)
+pikes_short <- pikes_hs_merged[pikes_hs_merged$HistorySize < 24 , ] 
+pikes_long <- pikes_hs_merged[pikes_hs_merged$HistorySize >= 24 , ]
+
+# VOLUMES
+# Filtering data by the forecasting minth
+retrieved_volumes <- retrieved_volumes[retrieved_volumes$TDATE < forecasting_month, ]
+retrieved_volumes <- retrieved_volumes[which(retrieved_volumes$TCODE %in% SVNC_DPG_list), ]
+retrieved_volumes$TDATE <- as.Date(retrieved_volumes$TDATE)
+# ranging by history
+volumes_hs <- rangeByHistorySize(retrieved_volumes, as.factor(retrieved_volumes$TCODE))
+volumes_hs_merged <- merge(retrieved_volumes, volumes_hs, 
+                         by.x = 'TCODE', by.y = 'FactorLevel', all.x = TRUE, sort = TRUE)
+volumes_hs_merged <- volumes_hs_merged[order(volumes_hs_merged$TCODE, 
+                                             volumes_hs_merged$TDATE), ]
+rm(volumes_hs)
+volumes_short <- volumes_hs_merged[volumes_hs_merged$HistorySize < 24 , ] 
+volumes_long <- volumes_hs_merged[volumes_hs_merged$HistorySize >= 24 , ]
+
+
+#### FORECASTING PIKES AND VOLUMES ####
+
+# PIKES AND VOLUMES LONG
+fcst_pike_long <- hwforecast_n_step_fwrd(pikes_long, "TCODE", 
+                                         "TDATE", "PIKE_FACT", 1, 1)
+fcst_volumes_long <- hwforecast_n_step_fwrd(volumes_long, "TCODE", 
+                                           "TDATE", "VOLUME", 1, 1)
+
+# PIKES AND VOLUMES SHORT
+fcst_pike_short <- shortForecast(pikes_short, "TCODE", 
+                                 "TDATE", "PIKE_FACT", 1, 1)
+fcst_volumes_short <- shortForecast(volumes_short, "TCODE", 
+                                   "TDATE", "VOLUME", 1, 1)
+
+################ PREDICTION SVNC FOR LONG DATA ################
+
+predict_price <- function(cur_ts, h, n) {
+  tryCatch(
+    {
+      print("Building Holt-Winters model...")
+      current_model <- HoltWinters(cur_ts)
+      return (predict(current_model, n = h)[n])
+    }, error = function(cond) {
+      message("Holt-Winters model optimization failed to converge!")
+      print("Starting calculation with default algorithm...")
+      print("Algorithm: prediction = prev_month_cur_year/
+            (prev_month_prev_year*cur_month_prev_year)")
+      return (last(lag(cur_ts)) / last(lag(cur_ts, 13)) * last(lag(cur_ts, 12)))
+    }
+  )
+}
+
+hwforecast_n_step_fwrd <- function(df, group.var, date.var, target.var, h, n) {
+  require(xts)
+  require(tseries)
+  predictions <- list()
+  # safe copying
+  tbl <- df[, c(group.var , date.var, target.var)]
+  tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+  for (i in unique(tbl[, group.var])) {
+    # partitioning by group_var values
+    one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+    start_date <- min(one_piece[, date.var])
+    # making a TS object
+    one_piece_ts <- toTimeSeries(one_piece, date.var, 12, start_date)
+    prediction_hw <- predict_price(one_piece_ts, h, n)
+    prediction_arima <- predict_price_short(one_piece_ts, h, n)
+    prediction <- mean(c(prediction_hw, prediction_arima))
+    if (prediction < 0) prediction <- prediction_arima
+    predictions[i] <- prediction
+    print(predictions[i])
+  }
+  return (predictions)
+}
+
+# SVNC EE and N
+fcst_svnc_m_long <- hwforecast_n_step_fwrd(svnc_long, "TCODE", 
+                                           "TDATE", "P_NC_UNREG_AVG", 2, 2)
+fcst_svnc_ee_long <- hwforecast_n_step_fwrd(svnc_long, "TCODE", 
+                                           "TDATE", "P_VC_UNREG_AVG", 2, 2)
+
+# SHORT
+
+predict_price_short <- function(cur_ts, nsteps, n) {
+  require(forecast)
+  tryCatch(
+    {
+      print("Building Arima model...")
+      current_model <- auto.arima(cur_ts)
+      return (forecast(current_model, h = nsteps)$mean[n])
+    }, error = function(cond) {
+      message("Arima model optimization failed to converge!")
+      message("MA prediction failed!")
+      print("Calculating simple mean...")
+      return (mean(cur_ts))
+    }
+  )
+}
+
+shortForecast <- function(df, group.var, date.var, target.var, h, n) {
+  require(TTR)
+  require(xts)
+  require(tseries)
+  predictions <- list()
+  # safe copying
+  tbl <- df[, c(group.var , date.var, target.var)]
+  tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+  for (i in unique(tbl[, group.var])) {
+    # partitioning by group_var values
+    one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+    start_date <- min(one_piece[, date.var])
+    # making a TS object
+    one_piece_ts <- toTimeSeries(one_piece, "date", 1, start_date)
+    predictions[i] <- predict_price_short(one_piece_ts, h, n)
+    print(predictions[i])
+      }
+  return (predictions)
+}
+
+# SVNC EE and N
+
+fcst_svnc_m_short <- shortForecast(svnc_short, "TCODE", 
+                                           "TDATE", "P_NC_UNREG_AVG", 2, 2)
+fcst_svnc_ee_short <- shortForecast(svnc_short, "TCODE", 
+                                           "TDATE", "P_VC_UNREG_AVG", 2, 2)
+
+# merging forecasted values
+tcodes_long <- data.frame(TCODE = names(fcst_svnc_m_long),
+                          P_NC_UNREG_AVG = as.numeric(fcst_svnc_m_long), 
+                          P_VC_UNREG_AVG = as.numeric(fcst_svnc_ee_long))
+tcodes_short <- data.frame(TCODE = names(fcst_svnc_m_short), 
+                          P_NC_UNREG_AVG = as.numeric(fcst_svnc_m_short), 
+                          P_VC_UNREG_AVG = as.numeric(fcst_svnc_ee_short))
+tcodes <- rbind(tcodes_long, tcodes_short)
+
+tpcodesregs <- data[data$TDATE == as.Date('2016-06-01'), 
+                              c('TCODE', 'PCODE', 'REGION_CODE')]
+result_SVNC <- merge(tpcodesregs, tcodes, 
+                by = 'TCODE', all.x = TRUE, sort = TRUE)[, c('TCODE', 'PCODE', 'REGION_CODE', 
+                                                             'P_NC_UNREG_AVG', 'P_VC_UNREG_AVG')]
+# joining pikes and volumes
+# PIKES
+pikes_long <- data.frame(TCODE = names(fcst_pike_long),
+                          PIKE = as.numeric(fcst_pike_long))
+pikes_short <- data.frame(TCODE = names(fcst_pike_short),
+                          PIKE = as.numeric(fcst_pike_short))
+pikes_forecast <- rbind(pikes_long, pikes_short)
+#VOLUMES
+volumes_long <- data.frame(TCODE = names(fcst_volumes_long),
+                         VOLUME = as.numeric(fcst_volumes_long))
+volumes_short <- data.frame(TCODE = names(fcst_volumes_short),
+                          VOLUME = as.numeric(fcst_volumes_short))
+volumes_forecast <- rbind(volumes_long, volumes_short)
+
+# merging all together
+result <- merge(result_SVNC, pikes_forecast, by = 'TCODE', all.x = TRUE, sort = TRUE)
+result <- merge(result, volumes_forecast, by = 'TCODE', all.x = TRUE, sort = TRUE)
+result <- result[result$TCODE %in% dpg_gp_info$TCODE, ] 
+
+# calculating costs of N and EE
+result$N_COST <- result$P_NC_UNREG_AVG * result$PIKE
+result$EE_COST <- result$P_VC_UNREG_AVG * result$VOLUME
+library(dplyr)
+result_grouped <- summarize(group_by(result, PCODE, REGION_CODE), 
+                            PRICE_N = sum(N_COST)/sum(PIKE), 
+                            PRICE_EE = sum(EE_COST)/sum(VOLUME))
+result_grouped <- result_grouped[with(result_grouped, order(PCODE, REGION_CODE)), ]
+
+library(xlsx)
+write.xlsx(as.data.frame(result_grouped), file = 'svnc_m_ee_jan2017_fcst_weighted_avg.xlsx', sheetName = 'SVNC_M_ee')
+
+
+
+#### Formating for output ####
+dpg_gp_info$dpg_count <- 1
+# selecting only PCODES with one dpg in region
+single_dpg <- dpg_gp_info %>%
+  group_by(PCODE, REGION_CODE) %>%
+  summarize(total_dpg_count = sum(dpg_count)) %>%
+  filter(total_dpg_count == 1) %>%
+  select(PCODE, REGION_CODE)
+# selecting only PCODES with more than one dpg in region
+multiple_dpgs <- dpg_gp_info %>%
+  group_by(PCODE, PNAME, REGION_CODE, REGION_NAME) %>%
+  summarize(total_dpg_count = sum(dpg_count)) %>%
+  filter(total_dpg_count != 1) %>%
+  select(PCODE, PNAME, REGION_CODE, REGION_NAME)
+
+single_dpg <- merge(dpg_gp_info, single_dpg, 
+                    by = c('PCODE', 'REGION_CODE'), all.y = TRUE) %>%
+  select(PCODE, PNAME, REGION_CODE, REGION_NAME, TCODE)
+
+# merging output data
+output <- merge(result_grouped, single_dpg, 
+                by = c('PCODE', 'REGION_CODE'), all.x = TRUE, sort = FALSE) %>%
+  merge(multiple_dpgs, by = c('PCODE', 'REGION_CODE'), all.x = TRUE, sort = TRUE)
+output$PNAME <- ifelse(!is.na(output$PNAME.x), output$PNAME.x, output$PNAME.y) 
+output$REGION_NAME <- ifelse(!is.na(output$REGION_NAME.x), output$REGION_NAME.x, 
+                             output$REGION_NAME.y)
+output$REGION_CODE <- as.numeric(output$REGION_CODE)
+output <- output[order(output$PCODE, output$REGION_CODE), 
+                 c('PNAME', 'TCODE', 'REGION_CODE', 
+                     'REGION_NAME', 'PCODE', 'PRICE_EE', 'PRICE_N')]
+library(xlsx)
+write.xlsx(output, file = "FORMATTED_OUTPUT.xlsx", 
+           sheetName = "svnc_forecast", row.names = FALSE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

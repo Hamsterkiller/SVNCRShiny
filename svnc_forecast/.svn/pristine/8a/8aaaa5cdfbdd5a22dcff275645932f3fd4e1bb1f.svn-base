@@ -1,0 +1,32 @@
+\name{SVNC_M_ts_diff1}
+\alias{SVNC_M_ts_diff1}
+\docType{data}
+\title{
+%%   ~~ data name/kind ... ~~
+}
+\description{
+%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+}
+\usage{data("SVNC_M_ts_diff1")}
+\format{
+  The format is:
+ ts [1:61, 1] -56090 11204 8644 3461 -26909 ...
+ - attr(*, "tsp")= num [1:3] 2011 2016 12
+ - attr(*, "dimnames")=List of 2
+  ..$ : NULL
+  ..$ : chr "Series 1"
+}
+\details{
+%%  ~~ If necessary, more details than the __description__ above ~~
+}
+\source{
+%%  ~~ reference to a publication or URL from which the data were obtained ~~
+}
+\references{
+%%  ~~ possibly secondary sources and usages ~~
+}
+\examples{
+data(SVNC_M_ts_diff1)
+## maybe str(SVNC_M_ts_diff1) ; plot(SVNC_M_ts_diff1) ...
+}
+\keyword{datasets}

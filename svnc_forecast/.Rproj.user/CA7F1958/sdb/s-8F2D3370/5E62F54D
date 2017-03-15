@@ -1,0 +1,18 @@
+{
+    "contents" : "library(rsconnect)\n\n#Sys.setenv(http_proxy = \"http://i.zemskov:GrandPik9@localhost:8080/\")\n\nlibrary(RCurl)\n\noptions(RCurlOptions = list(proxy = \"https://i.zemskov:GrandPik9@localhost:8080\", \n                            ssl.verifypeer = FALSE))\n\nsetAccountInfo(name = \"123a\", token = \"E6A47DF5869B6618EF9691E36B33F5F0\", \n                          secret = \"TRkD7LNpmgL9MvTbwcreHC3IXl11NlSw0elEbibS\")\n\ndeployApp(appDir = \"C:/!zemskov/svnc_forecast/shiny_app\", appName = \"svnc\", \n                    account = \"123a\")\n",
+    "created" : 1489149417536.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1998616465",
+    "id" : "5E62F54D",
+    "lastKnownWriteTime" : 1489567611,
+    "path" : "C:/!zemskov/svnc_forecast/shiny_app/deploy.R",
+    "project_path" : "shiny_app/deploy.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

@@ -1,0 +1,431 @@
+rm(list = ls())
+library(shiny)
+library(dplyr)
+library(ggplot2)
+library(xts)
+library(xlsx)
+
+
+## dealing with NA's
+## function, that imputing NA's with median vaues
+imputeMedian <- function(df, impute.var) {
+  data <- df
+  data[which(is.na(data[, impute.var]) == TRUE), impute.var] = 
+    median(data[which(is.na(data[, impute.var]) == FALSE), impute.var])
+  return (data)
+}
+
+## dealing with NA's
+## function, that imputing NA's with mean vaues in each group
+imputeMean <- function(impute.var, filter.var, var.levels) {
+  for (v in var.levels) {
+    impute.var[ which(filter.var == v)] <- impute(impute.var[
+      which(filter.var == v)
+      ], fun = mean)
+  }
+  return (impute.var)
+}
+
+# predicting price (from self-written tsauxfunc package)
+predict_price <- function(cur_ts, h, n) {
+  tryCatch(
+    {
+      print("Building Holt-Winters model...")
+      current_model <- HoltWinters(cur_ts)
+      return (predict(current_model, n = h)[n])
+    }, error = function(cond) {
+      message("Holt-Winters model optimization failed to converge!")
+      print("Starting calculation with default algorithm...")
+      print("Algorithm: prediction = prev_month_cur_year/
+            (prev_month_prev_year*cur_month_prev_year)")
+      return (last(lag(cur_ts)) / last(lag(cur_ts, 13)) * last(lag(cur_ts, 12)))
+    }
+  )
+}
+
+# predicting price for objects with short history
+# (from self-written tsauxfunc package)
+predict_price_short <- function(cur_ts, nsteps, n) {
+  require(forecast)
+  tryCatch(
+    {
+      print("Building Arima model...")
+      current_model <- auto.arima(cur_ts)
+      return (forecast(current_model, h = nsteps)$mean[n])
+    }, error = function(cond) {
+      message("Arima model optimization failed to converge!")
+      message("MA prediction failed!")
+      print("Calculating simple mean...")
+      return (mean(cur_ts))
+    }
+  )
+}
+
+# creating list of DPGs with the siaze of it's history (in months) 
+# (from self-written tsauxfunc package)
+rangeByHistorySize <- function(dataset, keyFactor) {
+  #creating output df
+  historyRanks <- data.frame(FactorLevel=as.character(), 
+                             HistorySize=as.integer())
+  # for each unique value of the factor var do...
+  for (i in levels(keyFactor)) {
+    #historyRow <- data.frame(FactorLevel = i, HistorySize = nrow(dataset[which(dataset$keyFactor == i), ]))
+    historyRanks <- rbind(historyRanks, data.frame(FactorLevel = i, 
+                                                   HistorySize = nrow(dataset[which(keyFactor == i), ])))
+  }
+  return (historyRanks[order(-historyRanks$HistorySize), ])
+}
+
+# keeping only those objects which exists in the (n-1) month
+# (from self-written tsauxfunc package)
+filterActuals <- function(df, date_var, group_var, cur_date) {
+  actualDPGs <- unique(subset(df, df[, date_var] == as.Date(cur_date), 
+                              select = group_var))
+  res = merge(df, actualDPGs, by = group_var)
+  return(res)
+}
+
+# converting dataframe to timeseries
+# (from self-written tsauxfunc package)
+toTimeSeries <- function(df, date_var, freq, start_date) {
+  require(xts)
+  as_ts <- xts(df[ , !colnames(df) %in% c(date_var)], order.by = df[ , date_var])
+  result <- ts(as_ts, frequency = freq, start = as.Date(start_date))
+  return (result)
+}
+
+# Function applies forecasting method to paneled time series with history size 
+# more than 21 months
+hwforecast_n_step_fwrd <- function(df, group.var, date.var, target.var, h, n) {
+  require(xts)
+  require(tseries)
+  predictions <- list()
+  # safe copying
+  tbl <- df[, c(group.var , date.var, target.var)]
+  tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+  for (i in unique(tbl[, group.var])) {
+    # partitioning by group_var values
+    one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+    if (nrow(one_piece[which(is.na(one_piece[, target.var]) == TRUE), ]) > 0)
+      # imputing missing values
+      one_piece <- imputeMedian(one_piece, target.var)
+    start_date <- min(one_piece[, date.var])
+    # making a TS object
+    one_piece_ts <- toTimeSeries(one_piece, date.var, 12, start_date)
+    # predicting with Holt-Winters algorithm
+    prediction_hw <- predict_price(one_piece_ts, h, n)
+    # predicting with ARIMA
+    prediction_arima <- predict_price_short(one_piece_ts, h, n)
+    prediction <- mean(c(prediction_hw, prediction_arima))
+    if (prediction < 0) prediction <- prediction_arima
+    predictions[i] <- prediction
+    print(predictions[i])
+  }
+  return (predictions)
+}
+
+# Function applies forecasting method to paneled time series with history size 
+# less than 21 months
+shortForecast <- function(df, group.var, date.var, target.var, h, n) {
+  require(TTR)
+  require(xts)
+  require(tseries)
+  predictions <- list()
+  # safe copying
+  tbl <- df[, c(group.var , date.var, target.var)]
+  tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+  for (i in unique(tbl[, group.var])) {
+    # partitioning by group_var values
+    one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+    if (nrow(one_piece[which(is.na(one_piece[, target.var]) == TRUE), ]) > 0)
+      one_piece <- imputeMedian(one_piece, target.var)
+    start_date <- min(one_piece[, date.var])
+    # making a TS object
+    one_piece_ts <- toTimeSeries(one_piece, date.var, 1, start_date)
+    predictions[i] <- predict_price_short(one_piece_ts, h, n)
+    print(predictions[i])
+  }
+  return (predictions)
+}
+
+# data frame for saving forecast-data
+forecasts_to_save <- data.frame(PCODE = character(), REGION = character(), 
+                                SVNC_M_FCST = numeric(), SVNC_EE_FCST = numeric(), 
+                                stringsAsFactors = FALSE)
+
+# get participant-region table from the last available month data
+getParticipantsRegions <- function() {
+  res <- svnc_data[svnc_data$TDATE == max(svnc_data$TDATE), 
+                   c("PCODE", "PNAME", "REGION_NAME")]
+}
+
+# gets participant names by there codes
+getPName <- function(pcd) {
+  if (is.null(pcd))
+    return ("")
+  pcode <- pcd
+  pcode_data <- svnc_data[svnc_data$PCODE == pcode, c("TDATE", "PNAME")]
+  max_date <- max(pcode_data$TDATE)
+  result <-  unique(pcode_data[which(pcode_data$TDATE == max_date), c("PNAME")])
+  return (result)
+}
+
+getRegions <- function(pcodes) {
+  
+  res <- svnc_data[svnc_data$PCODE == pcodes, c("REGION_NAME")]
+  return(res)
+}
+
+getFactParticipant <- function(pcode, reg_name) {
+  data <- svnc_data[svnc_data$PCODE %in% pcode & svnc_data$REGION_NAME %in% reg_name,
+                    c("TDATE", "PCODE", "PNAME", "TCODE", "REGION_CODE", "REGION_NAME", 
+                      "P_NC_UNREG_AVG", "P_VC_UNREG_AVG", "PIKE_FACT", "VOLUME")]
+  #data$TDATE <- as.Date(data$TDATE)
+  data$P_R <- paste(data$PCODE, data$REGION_NAME)
+  data$N_COST <- data$P_NC_UNREG_AVG * data$PIKE_FACT
+  data$EE_COST <- data$P_VC_UNREG_AVG * data$VOLUME
+  library(dplyr)
+  dataParticipant <- summarize(group_by(data, TDATE, PNAME, P_R), 
+                              SVNC_M = sum(N_COST)/sum(PIKE_FACT), 
+                              SVNC_EE = sum(EE_COST)/sum(VOLUME))
+  dataParticipant <- dataParticipant[order(dataParticipant$P_R), ]
+  return(dataParticipant)
+}
+
+getDPGQuant <- function(pcd, reg) {
+  pcd_reg <- svnc_data[svnc_data$PCODE == pcd & svnc_data$REGION_NAME == reg, 
+                       c("TDATE", "PNAME", "TCODE", "REGION_NAME", "P_NC_UNREG_AVG")]
+  if (nrow(pcd_reg) == 0)
+    return ("У данного участника нет ГТП в данном субъекте!")
+  result <- paste("Общее количество ГТП выбранных участников в регионах =", 
+                  as.character(length(unique(pcd_reg$TCODE))))
+  return (result)
+}
+
+# forecasting for single participant
+singleForecast <- function(pcode, reg_name, nsteps) {
+  # filtering and preparing data
+  last_fact_date <- as.character(cut(max(svnc_data$TDATE), "month"))
+  #print(last_fact_date)
+  data <- svnc_data[svnc_data$PCODE == pcode & svnc_data$REGION_NAME == reg_name,
+                    c("TDATE", "PCODE", "PNAME", "TCODE", "REGION_CODE", "REGION_NAME", 
+                      "P_NC_UNREG_AVG", "P_VC_UNREG_AVG")]
+  data <- filterActuals(data, "TDATE", "TCODE", last_fact_date)
+  #data$TDATE <- as.Date(data$TDATE)
+  data <- data[, c("TDATE", "TCODE", "PCODE", "REGION_NAME", 
+                   "P_NC_UNREG_AVG", "P_VC_UNREG_AVG")]
+  #print(nrow(data))
+  # calculating history size (with funcion 'rangeByHistorySize' from tsauxfunc package)
+  data_hs <- rangeByHistorySize(data, as.factor(data$TCODE))
+  data_hs_merged <- merge(data, data_hs, 
+                            by.x = 'TCODE', by.y = 'FactorLevel', all.x = TRUE, sort = TRUE)
+  data_hs_merged <- data_hs_merged[order(data_hs_merged$TCODE, data_hs_merged$TDATE), ]
+  
+  # separating DPGs with long and short history
+  data_short <- data_hs_merged[data_hs_merged$HistorySize < 24 , ] 
+  data_long <- data_hs_merged[data_hs_merged$HistorySize >= 24 , ]
+  # making forecasts
+  if (nrow(data_long) > 0) {
+    fcst_svnc_m_long <- hwforecast_n_step_fwrd(data_long, "TCODE", 
+                                             "TDATE", "P_NC_UNREG_AVG", 2, 2)
+    fcst_svnc_ee_long <- hwforecast_n_step_fwrd(data_long, "TCODE", 
+                                               "TDATE", "P_VC_UNREG_AVG", 2, 2)
+    
+    df_fcst_long <- data.frame(TCODE = names(fcst_svnc_m_long),
+                               P_NC_UNREG_AVG = as.numeric(fcst_svnc_m_long), 
+                               P_VC_UNREG_AVG = as.numeric(fcst_svnc_ee_long))
+  } else {
+    df_fcst_long <- data.frame()
+  }
+  
+  if (nrow(data_short) > 0) {
+    fcst_svnc_m_short <- shortForecast(data_short, "TCODE", 
+                                     "TDATE", "P_NC_UNREG_AVG", 2, 2)
+    fcst_svnc_ee_short <- shortForecast(data_short, "TCODE", 
+                                       "TDATE", "P_VC_UNREG_AVG", 2, 2)
+    df_fcst_short <- data.frame(TCODE = names(fcst_svnc_m_short), 
+                                P_NC_UNREG_AVG = as.numeric(fcst_svnc_m_short),
+                                P_VC_UNREG_AVG = as.numeric(fcst_svnc_ee_short))
+  } else {
+    df_fcst_short <- data.frame()
+  }
+  
+  # merging forecasted values
+  if (nrow(df_fcst_short) > 0 & nrow(df_fcst_long) > 0) {
+    fcst_df <- rbind(df_fcst_long, df_fcst_short)
+  } else if (nrow(df_fcst_short) > 0 & nrow(df_fcst_long) == 0) {
+    fcst_df <- df_fcst_short
+  } else {
+    fcst_df <- df_fcst_long
+  }
+  supp_data <- data[data$TDATE == max(data$TDATE), 
+                      c('TCODE', 'PCODE', 'REGION_NAME')]
+  dpg_fcst <- merge(fcst_df, supp_data, 
+                  by = 'TCODE', all.x = TRUE, sort = TRUE)[, 
+                  c('PCODE', 'REGION_NAME', 'TCODE', 'P_NC_UNREG_AVG', 'P_VC_UNREG_AVG')]
+  res <- summarize(group_by(dpg_fcst, PCODE, REGION_NAME), 
+                   SVNC_M_FCST = mean(P_NC_UNREG_AVG), 
+                   SVNC_EE_FCST = mean(P_VC_UNREG_AVG))
+
+  names(res) <- c("Код участника", "Регион", "Проноз СВНЦ на мощность", "Прогноз СВНЦ на ЭЭ")
+  return (res)
+}
+
+# forecating for all participants
+forecastForEach <- function(updateProgress = NULL) {
+  forecasts <- data.frame(PCODE = character(), REGION = character(), 
+                          SVNC_M_FCST = numeric(), SVNC_EE_FCST = numeric(), 
+                          stringsAsFactors = FALSE)
+  pcodes_regions <- unique(svnc_data[svnc_data$TDATE == max(svnc_data$TDATE), 
+                           c("PCODE", "REGION_NAME")])
+  for (i in seq(1:nrow(pcodes_regions))) {
+    one_row <- pcodes_regions[i, ]
+    if (is.function(updateProgress)) {
+      pr_value <- i / nrow(pcodes_regions)
+      text <- paste0("Forecasting prices for ", one_row$PCODE, " - "
+                     , one_row$REGION_NAME)
+      updateProgress(value = pr_value, detail = text)
+    }
+    res <- singleForecast(one_row$PCODE, one_row$REGION_NAME)
+    # if res is in the list of actual GP-REGION pairs then add to accum. data
+    if (nrow(merge(res, gp_region[, c('PCODE', 'REGION_CODE')])) > 0) {
+      forecasts[i, ] <- res
+      forecasts_to_save[i, ] <- res
+    }
+  }
+  names(forecasts) <- c("Код участника", "Регион", "Проноз СВНЦ на мощность", "Прогноз СВНЦ на ЭЭ")
+  return(forecasts)
+}
+
+shinyServer(
+  function(input, output) {
+
+    output$regions <- renderUI({
+      selectInput(inputId = "regions", label = "Выберите субъект федерации", 
+                              choices = getRegions(input$pcode), multiple = TRUE)
+
+    })
+    
+    output$regions_forecast <- renderUI({
+      selectInput(inputId = "regions_forecast", label = "Выберите субъект федерации", 
+                  choices = getRegions(input$pcd_forecast))
+    })
+    
+    output$fact_svnc <- renderPlot({ 
+      d <- getFactParticipant(input$pcode, input$regions)
+      if (input$grapIndicator == "СВНЦ на мощность") {
+        ggplot(d, aes(x = TDATE, y = SVNC_M, colour = P_R)) +
+          geom_line() + xlab("") + ylab("СВНЦ на мощность, руб./МВт") +
+          theme(text = element_text(size = 18), legend.position = 'bottom') 
+      } else {
+        ggplot(d, aes(x = TDATE, y = SVNC_EE, colour = P_R)) +
+          geom_line() + xlab("") + ylab("СВНЦ на электроэнергию, руб./МВт*ч") +
+          theme(text = element_text(size = 18), legend.position = 'bottom') 
+      }
+    })
+    
+    # function, that forms fact data
+    getFactTable <- function() {
+      d <- getFactParticipant(input$pcode, input$regions)
+      d$TDATE <- format(d$TDATE,'%Y-%m-%d')
+      names(d) <- c("Дата", "Наименование участника", "Код участника - Регион", "СВНЦ на мощность, руб./МВт", "СВНЦ на электроэнергию, руб./МВт*ч")
+      d
+    }
+    
+    # output of the fact data to the table
+    output$svnc_table <- renderTable({
+      getFactTable()
+    })
+    
+    output$downloadFactData <- downloadHandler(
+      filename = 'fact_svnc.xlsx',
+      content = function(file) {
+        data <- as.data.frame(getFactTable())
+        write.xlsx(data, file)
+      }
+    )
+    
+    forecastTable <- eventReactive(input$launchForecast, {
+      if (input$all == FALSE) {
+        singleForecast(input$pcd_forecast, input$regions_forecast)
+      } else {
+        # Creating a progress object
+        progress <- shiny::Progress$new(style = 'notification')
+        progress$set(message = "Forecasting, please, wait ...", value = 0)
+        # Close the progress when this reactive exits (even if there's an error)
+        on.exit(progress$close())
+        
+        # Create a closure to update progress.
+        # Each time this is called:
+        # - If `value` is NULL, it will move the progress bar 1/5 of the remaining
+        #   distance. If non-NULL, it will set the progress to that value.
+        # - It also accepts optional detail text.
+        updateProgress <- function(value = NULL, detail = NULL) {
+          if (is.null(value)) {
+            value <- progress$getValue()
+            value <- value + (progress$getMax() - value) / 5
+          }
+          progress$set(value = value, detail = detail)
+        }
+        
+        # launch forecasting
+        forecastForEach(updateProgress)
+      }
+
+    })
+    
+    # output of the forecasted data for each pair PCODE-REGION
+    output$svnc_n_fcst <- renderTable({
+      x <- forecastTable()
+      save(x, file = "forecasts.RData")
+      x
+    })
+    
+    output$downloadForecastData <- downloadHandler(
+      filename = 'forecast_svnc.xlsx',
+      content = function(file) {
+        load("shiny_app/data_sources/forecasts.RData")
+        x <- as.data.frame(x)
+        names(x) <- c("PCODE", "REGION_NAME", "PRICE_N", "PRICE_EE")
+        x <- merge(x, unique(dpg_gp_info[, c("PCODE", "REGION_NAME", "REGION_CODE")]), 
+                   by = c("PCODE", "REGION_NAME"), all.x = TRUE)
+        x <- na.omit(x)
+        #### Formating for output ####
+        dpg_gp_info$dpg_count <- 1
+        # selecting only PCODES with one dpg in region
+        single_dpg <- dpg_gp_info %>%
+          group_by(PCODE, REGION_CODE) %>%
+          summarize(total_dpg_count = sum(dpg_count)) %>%
+          filter(total_dpg_count == 1) %>%
+          select(PCODE, REGION_CODE)
+        # selecting only PCODES with more than one dpg in region
+        multiple_dpgs <- dpg_gp_info %>%
+          group_by(PCODE, PNAME, REGION_CODE, REGION_NAME) %>%
+          summarize(total_dpg_count = sum(dpg_count)) %>%
+          filter(total_dpg_count != 1) %>%
+          select(PCODE, PNAME, REGION_CODE, REGION_NAME)
+        
+        single_dpg <- merge(dpg_gp_info, single_dpg, 
+                            by = c('PCODE', 'REGION_CODE'), all.y = TRUE) %>%
+          select(PCODE, PNAME, REGION_CODE, REGION_NAME, TCODE)
+        
+        # merging output data
+        output <- merge(x, single_dpg, 
+                        by = c('PCODE', 'REGION_CODE'), all.x = TRUE, sort = FALSE) %>%
+          merge(multiple_dpgs, by = c('PCODE', 'REGION_CODE'), all.x = TRUE, sort = TRUE)
+        output$PNAME <- ifelse(!is.na(output$PNAME.x), output$PNAME.x, output$PNAME.y) 
+        output$REGION_NAME <- ifelse(!is.na(output$REGION_NAME.x), output$REGION_NAME.x, 
+                                     output$REGION_NAME.y)
+        output$REGION_CODE <- as.numeric(output$REGION_CODE)
+        output <- output[order(output$PCODE, output$REGION_CODE), 
+                         c('PNAME', 'TCODE', 'REGION_CODE', 
+                           'REGION_NAME', 'PCODE', 'PRICE_EE', 'PRICE_N')]
+        
+        print(dim(output))
+        write.xlsx(output, file)
+      }
+    ) 
+    
+    
+  }
+)

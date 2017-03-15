@@ -1,0 +1,512 @@
+result_may <- merge(tpcodesregs_may, tcodes,
+by = 'TCODE', all.x = TRUE, sort = TRUE)[, c('PCODE', 'REGION_CODE', 'P_NC_UNREG_AVG')]
+result_grouped_may <- summarize(group_by(result_may, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+View(result_grouped_may)
+class(data$date)
+comparing <- merge(result_may, data[data$date == as.Date('2016-05-01'), ],
+by = 'TCODE', all.x = TRUE, sort = TRUE)
+fact_may <- data[data$date == as.Date('2016-05-01'), ][, c('TCODE', 'P_NC_UNREG_AVG')]
+View(fact_may)
+nrow(result_may)
+comparing <- merge(result_may, fact_may,
+by = 'TCODE', all.x = TRUE, sort = TRUE)
+names(result_may)
+tcodes <- rbind(tcodes_long, tcodes_short)
+tcodes_may <- rbind(tcodes_long_may, tcodes_short_may)
+View(tcodes_may)
+comparing <- merge(tcodes_may, fact_may,
+by = 'TCODE', all.x = TRUE, sort = TRUE)
+View(comparing)
+?abs
+comparing$delta <- abs(comparing$P_NC_UNREG_AVG.y - comparing$P_NC_UNREG_AVG.x)/P_NC_UNREG_AVG.y
+comparing$delta <- abs(comparing$P_NC_UNREG_AVG.y - comparing$P_NC_UNREG_AVG.x)/P_NC_UNREG_AVG.y
+View(comparing)
+comparing$delta <- abs(comparing$P_NC_UNREG_AVG.y - comparing$P_NC_UNREG_AVG.x)/comparing$P_NC_UNREG_AVG.y
+comparing$delta <- abs(comparing$P_NC_UNREG_AVG.y - comparing$P_NC_UNREG_AVG.x)/comparing$P_NC_UNREG_AVG.y * 100
+view(comparing)
+View(comparing)
+plot(pabaksb1_ee)
+mean(comparing$delta)
+median(comparing$delta)
+class(comparing$delta)
+mean(comparing$delta)
+mean(comparing$delta, na.rm = TRUE)
+median(comparing$delta, na.rm = TRUE)
+sd(comparing$delta, na.rm = TRUE)
+comparing <- merge(tcodes_may, fact_may,
+by = 'TCODE', all.x = TRUE, sort = TRUE)
+comparing$delta <- abs((comparing$P_NC_UNREG_AVG.y - comparing$P_NC_UNREG_AVG.x)/comparing$P_NC_UNREG_AVG.y * 100)
+Viwe(fact_may)
+View(fact_may)
+comparing$delta <- abs((comparing$P_NC_UNREG_AVG.y - comparing$P_NC_UNREG_AVG.x)/comparing$P_NC_UNREG_AVG.y * 100)
+View(comparing)
+comparing <- merge(tcodes_may, fact_may,
+by = 'TCODE', all.x = TRUE, sort = TRUE)
+comparing <- na.remove(comparing)
+comparing$delta <- abs((comparing$P_NC_UNREG_AVG.y - comparing$P_NC_UNREG_AVG.x)/comparing$P_NC_UNREG_AVG.y * 100)
+mean(comparing$delta, na.rm = TRUE)
+median(comparing$delta, na.rm = TRUE)
+sd(comparing$delta, na.rm = TRUE)
+comparing <- merge(tcodes_may, fact_may,
+by = 'TCODE', all.x = TRUE, sort = TRUE)
+comparing <- merge(tcodes_may, fact_may,
+by = 'TCODE', all.x = TRUE, sort = TRUE)
+nrow(comparing)
+comparing <- comparing[which(!is.na(comparing$P_NC_UNREG_AVG.x) &&
+is.na(comparing$P_NC_UNREG_AVG.y))]
+nrow(comparing)
+View(comparing)
+comparing <- merge(tcodes_may, fact_may,
+by = 'TCODE', all.x = TRUE, sort = TRUE)
+View(comparing)
+comparing <- comparing[which(!is.na(comparing$P_NC_UNREG_AVG.y))]
+comparing <- comparing[which(!is.na(comparing$P_NC_UNREG_AVG.y)), ]
+nrow(comparing)
+comparing$delta <- abs((comparing$P_NC_UNREG_AVG.y - comparing$P_NC_UNREG_AVG.x)/comparing$P_NC_UNREG_AVG.y * 100)
+mean(comparing$delta, na.rm = TRUE)
+median(comparing$delta, na.rm = TRUE)
+sd(comparing$delta, na.rm = TRUE)
+mean(comparing$delta)
+View(comparing)
+comparing <- merge(tcodes_may, fact_may,
+by = 'TCODE', all.x = TRUE, sort = TRUE)
+comparing <- comparing[which(!is.na(comparing$P_NC_UNREG_AVG.y)), ]
+View(comparing)comparing
+View(comparing)
+names(comparing) <- c('TCODE', 'PREDICTION', 'FACT')
+View(comparing)
+View(comparing)
+comparing$delta <- 100 * (comparing$FACT - comparing$PREDICTION)/comparing$FACT
+View(comparing)
+mean(comparing$delta)
+comparing$delta
+abs(comparing$delta)
+comparing$delta
+is.na(comparing$delta)
+comparing$delta[which(is.na(comparing$delta)]
+comparing$delta[which(is.na(comparing$delta), ]
+which(is.na(comparing$delta))
+which(!is.na(comparing$delta))
+class(comparing$delta)
+comparing$delta
+View(comparing)
+View(fact_may)
+fact_may_res <- merge(tpcodesregs_may, fact_may,
+by = 'TCODE', all.x = TRUE, sort = TRUE)[, c('PCODE', 'REGION_CODE', 'P_NC_UNREG_AVG')]
+View(fact_may_res)
+fact_may_res_grouped <- summarize(group_by(fact_may_res, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+nrow(fact_may_res_grouped)
+View(result_grouped_may)
+nrow(result_grouped_may)
+comparing <- merge(result_grouped_may, fact_may_res_grouped,
+by = 'TCODE', all.x = TRUE, sort = TRUE)
+names(result_grouped_may)
+comparing <- merge(result_grouped_may, fact_may_res_grouped,
+by = c('PCODE', 'REGION_CODE'), all.x = TRUE, sort = TRUE)
+View(comparing)
+names(comparing) <- c('PCODE', 'PREDICTION', 'FACT')
+View(comparing)
+comparing <- merge(result_grouped_may, fact_may_res_grouped,
+by = c('PCODE', 'REGION_CODE'), all.x = TRUE, sort = TRUE)
+comparing <- comparing[which(!is.na(comparing$P_NC_UNREG_AVG.y)), ]
+comparing <- merge(result_grouped_may, fact_may_res_grouped,
+by = c('PCODE', 'REGION_CODE'), all.x = TRUE, sort = TRUE)
+names(comparing) <- c('PCODE', 'REGION_CODE', 'PREDICTION', 'FACT')
+View(comparing)
+comparing$delta <- 100 * (comparing$FACT - comparing$PREDICTION)/comparing$FACT
+view(comparing)
+View(comparing)
+comparing$delta <- abs(100 * (comparing$FACT - comparing$PREDICTION)/comparing$FACT)
+View(comparing)
+mean(comparing$delta)
+median(comparing$delta)
+mean(comparing$delta)
+median(comparing$delta)
+sd(comparing$delta)
+View(result_grouped_may)
+View(result_grouped)
+write.csv("svnc_m_jul2016.csv")
+?write.csv
+write.csv(result_grouped, "svnc_m_jul2016.csv")
+write.csv(result_grouped, "svnc_m_jul2016.csv", sep = ';')
+write.csv(result_grouped, "svnc_m_jul2016.csv", sep = ;)
+write.csv(result_grouped, "svnc_m_jul2016.csv", sep = ";")
+library(xlsx)
+write.xlsx(result_grouped, file = 'svnc_m_jul2016.xlsx', sheetName = 'SVNC_M')
+View(data)
+rnames <- data[, c('PCODE', 'REGION_CODE', 'PNAME', 'REGION_NAME')]
+View(data)
+result_grouped_pnames <- merge(result_grouped, data[, c('PCODE', 'PNAME')],
+by = 'PCODE', all.x = TRUE, sort = TRUE)[, c('PCODE', 'REGION_CODE')]
+View(result_grouped_pnames)
+result_grouped <- summarize(group_by(result, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+result_grouped_pnames <- merge(result_grouped, data[, c('PCODE', 'PNAME')],
+by = c('PCODE', 'REGION_CODE'), all.x = TRUE, sort = TRUE)[, c('PCODE', 'REGION_CODE')]
+data_pnames <- data[, c('PCODE', 'PNAME')]
+View(data_pnames)
+data_pnames <- data[data$date == as.Date('2016-05-01'), c('PCODE', 'PNAME')]
+View(data_pnames)
+result_grouped <- result_grouped[c(result_grouped$PCODE, result_grouped$REGION_CODE), ]
+View(result_grouped)
+result_grouped <- summarize(group_by(result, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+result_grouped <- result_grouped[c('PCODE', 'REGION_CODE'), ]
+Viwe(result_grouped)
+View(result_grouped)
+result_grouped <- summarize(group_by(result, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+result_grouped <- result_grouped[order(c('PCODE', 'REGION_CODE')), ]
+View(result_grouped)
+result_grouped <- summarize(group_by(result, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+result_grouped <- result_grouped[order('PCODE', 'REGION_CODE'), ]
+View(result_grouped)
+result_grouped <- summarize(group_by(result, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+result_grouped <- result_grouped[order(result_grouped$PCODE, result_grouped$REGION_CODE), ]
+View(result_grouped)
+write.xlsx(result_grouped, file = 'svnc_m_jul2016.xlsx', sheetName = 'SVNC_M')
+write.xlsx(result_grouped, file = 'svnc_m_jul2016.xlsx', sheetName = 'SVNC_M')
+View(result_grouped)
+View(result_grouped)
+write.xlsx(result_grouped, file = 'svnc_m_jul2016.xlsx', sheetName = 'SVNC_M')
+write.xlsx(result_grouped, file = 'svnc_m_jul2016.xlsx', sheetName = 'SVNC_M')
+write.xlsx(result_grouped, file = 'svnc_m_jul2016.xlsx', sheetName = 'SVNC_M')
+View(result_grouped)
+result_grouped <- result_grouped[order(c(result_grouped$PCODE, result_grouped$REGION_CODE)), ]
+result_grouped <- summarize(group_by(result, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+result_grouped <- result_grouped[order(c(result_grouped$PCODE, result_grouped$REGION_CODE)), ]
+View(result_grouped)
+?order
+result_grouped <- summarize(group_by(result, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+result_grouped <- result_grouped[order(PCODE, REGION_CODE), ]
+result_grouped <- result_grouped[order('PCODE', 'REGION_CODE'), ]
+View(result_grouped)
+result_grouped <- summarize(group_by(result, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+result_grouped[with(result_grouped, order('PCODE', 'REGION_CODE')), ]
+result_grouped <- summarize(group_by(result, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+result_grouped[with(result_grouped, order(PCODE, REGION_CODE)), ]
+result_grouped <- summarize(group_by(result, PCODE, REGION_CODE), PRICE = mean(P_NC_UNREG_AVG))
+result_grouped <- result_grouped[with(result_grouped, order(PCODE, REGION_CODE)), ]
+View(result_grouped)
+write.xlsx(result_grouped, file = 'svnc_m_jul2016.xlsx', sheetName = 'SVNC_M')
+setwd("C:/!zemskov/RSV_SDD")
+rsv_src_data <- read.csv("./GTP_PRICES_FORECAST.csv", header = TRUE, sep=";",
+dec=".", stringsAsFactors = FALSE)
+region_prices_src <- read.csv("./REGION_PRICES_FORECAST.csv", header = TRUE, sep=";",
+dec=".", stringsAsFactors = FALSE)
+rsv_src_data$date <- as.Date(rsv_src_data$Tdate)
+region_prices_src$date <- as.Date(region_prices_src$Tdate)
+# II. Merging data
+merged_data <- merge(rsv_src_data, region_prices_src,
+by = c('rcode', 'date'), all.x = TRUE, sort = TRUE)
+rsv_prices_dpg <- merged_data[, c('date', 'tcode', 'pzcode', 'rcode',
+'direction.x', 'GTP_price', 'Region_price')]
+rsv_prices_dpg <- rsv_prices_dpg[order(rsv_prices_dpg$tcode, rsv_prices_dpg$date), ]
+# III. Adding HistorySize variable
+rsv_prices_dpg_hs <- rangeByHistorySize(rsv_prices_dpg, as.factor(rsv_prices_dpg$tcode))
+rsv_prices_dpg <- merge(rsv_src_data, rsv_prices_dpg_hs,
+by.x = 'tcode', by.y = 'FactorLevel', all.x = TRUE, sort = TRUE)
+# IV. Splitting data by HistorySize value
+rsv_prices_dpg_short <- rsv_prices_dpg[rsv_prices_dpg$HistorySize < 24 , ]
+rsv_prices_dpg_long <- rsv_prices_dpg[rsv_prices_dpg$HistorySize >= 24 , ]
+predict_price <- function(cur_ts, h, n) {
+tryCatch(
+{
+print("Building Holt-Winters model...")
+current_model <- HoltWinters(cur_ts)
+return (predict(current_model, n = h)[n])
+}, error = function(cond) {
+message("Holt-Winters model optimization failed to converge!")
+print("Starting calculation with default algorithm...")
+print("Algorithm: prediction = prev_month_cur_year/
+(prev_month_prev_year*cur_month_prev_year)")
+return (last(lag(cur_ts)) / last(lag(cur_ts, 13)) * last(lag(cur_ts, 12)))
+}
+)
+}
+hwforecast_n_step_fwrd <- function(df, group.var, date.var, target.var, h, n) {
+require(xts)
+require(tseries)
+predictions <- list()
+# safe copying
+tbl <- df[, c(group.var , date.var, target.var)]
+tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+for (i in unique(tbl[, group.var])) {
+# partitioning by group_var values
+one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+start_date <- min(one_piece[, date.var])
+# making a TS object
+one_piece_ts <- toTimeSeries(one_piece, "date", 12, start_date)
+predictions[i] <- predict_price(one_piece_ts, h, n)
+print(predictions[i])
+}
+return (predictions)
+}
+predictions_long <- hwforecast(rsv_prices_dpg_long, "tcode", "date", "GTP_price", 1, 1)
+warnings()
+length(predictions_long)
+nrow(rsv_prices_dpg_long)
+length(unique(rsv_prices_dpg_long$tcode))
+tail(predictions_long)
+predict_price <- function(cur_ts, h, n) {
+tryCatch(
+{
+#print("Building Holt-Winters model...")
+#current_model <- HoltWinters(cur_ts)
+return (predict(current_model, n = h)[n])
+}, error = function(cond) {
+message("Holt-Winters model optimization failed to converge!")
+print("Starting calculation with default algorithm...")
+print("Algorithm: prediction = prev_month_cur_year/
+(prev_month_prev_year*cur_month_prev_year)")
+return (last(lag(cur_ts)) / last(lag(cur_ts, 13)) * last(lag(cur_ts, 12)))
+}
+)
+}
+hwforecast_n_step_fwrd <- function(df, group.var, date.var, target.var, h, n) {
+require(xts)
+require(tseries)
+predictions <- list()
+# safe copying
+tbl <- df[, c(group.var , date.var, target.var)]
+tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+for (i in unique(tbl[, group.var])) {
+# partitioning by group_var values
+one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+start_date <- min(one_piece[, date.var])
+# making a TS object
+one_piece_ts <- toTimeSeries(one_piece, "date", 12, start_date)
+predictions[i] <- predict_price(one_piece_ts, h, n)
+#print(predictions[i])
+}
+return (predictions)
+}
+predictions_long <- hwforecast(rsv_prices_dpg_long, "tcode", "date", "GTP_price", 1, 1)
+predictions_long <- hwforecast_n_step_fwrd(rsv_prices_dpg_long, "tcode", "date", "GTP_price", 1, 1)
+predict_price <- function(cur_ts, h, n) {
+tryCatch(
+{
+print("Building Holt-Winters model...")
+current_model <- HoltWinters(cur_ts)
+return (predict(current_model, n = h)[n])
+}, error = function(cond) {
+message("Holt-Winters model optimization failed to converge!")
+print("Starting calculation with default algorithm...")
+print("Algorithm: prediction = prev_month_cur_year/
+(prev_month_prev_year*cur_month_prev_year)")
+return (last(lag(cur_ts)) / last(lag(cur_ts, 13)) * last(lag(cur_ts, 12)))
+}
+)
+}
+hwforecast_n_step_fwrd <- function(df, group.var, date.var, target.var, h, n) {
+require(xts)
+require(tseries)
+predictions <- list()
+# safe copying
+tbl <- df[, c(group.var , date.var, target.var)]
+tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+for (i in unique(tbl[, group.var])) {
+# partitioning by group_var values
+one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+start_date <- min(one_piece[, date.var])
+# making a TS object
+one_piece_ts <- toTimeSeries(one_piece, "date", 12, start_date)
+predictions[i] <- predict_price(one_piece_ts, h, n)
+print(predictions[i])
+}
+return (predictions)
+}
+ls()
+predictions_long <- hwforecast_n_step_fwrd(rsv_prices_dpg_long, "tcode", "date", "GTP_price", 1, 1)
+length(predictions_long)
+length(unique(rsv_prices_dpg_long$tcode))
+predict_price_short <- function(cur_ts, h, n) {
+tryCatch(
+{
+print("Building Arima model...")
+current_model <- auto.arima(cur_ts)
+return (predict(current_model, n.ahead = h)[1][[1]][n])
+}, error = function(cond) {
+message("Arima model optimization failed to converge!")
+message("MA prediction failed!")
+print("Calculating simple mean...")
+return (mean(cur_ts))
+}
+)
+}
+shortForecast <- function(df, group.var, date.var, target.var, h, n) {
+require(TTR)
+require(xts)
+require(tseries)
+predictions <- list()
+# safe copying
+tbl <- df[, c(group.var , date.var, target.var)]
+tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+for (i in unique(tbl[, group.var])) {
+# partitioning by group_var values
+one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+start_date <- min(one_piece[, date.var])
+# making a TS object
+one_piece_ts <- toTimeSeries(one_piece, "date", 1, start_date)
+predictions[i] <- predict_price_short(one_piece_ts, h, n)
+print(predictions[i])
+}
+return (predictions)
+}
+predictions_short <- shortForecast(rsv_prices_dpg_short,
+"tcode", "date", "GTP_price", 1, 1)
+length(predictions_short)
+length(unique(rsv_prices_dpg_short$tcode))
+max(predictions_long)
+max(predictions_long[[]])
+max(predictions_long[:])
+class(predictions_long)
+max(as.numeric(predictions_long))
+View(t(as.matrix(predictions_long)))
+predictions_long_df <- data.frame(GTP_CODE = names(predictions_long),
+PRICE = as.numeric(predictions_long))
+View(predictions_long_df)
+predictions_short_df <- data.frame(GTP_CODE = names(predictions_short),
+PRICE = as.numeric(predictions_short))
+result <- rbind(predictions_long, predictions_short)
+result <- rbind(predictions_long_df, predictions_short_df)
+nrow(result)
+nrow(predictions_long_df)
+nrow(predictions_short_df)
+nrow(predictions_long_df) + nrow(predictions_short_df)
+max(result$PRICE)
+min(result$PRICE)
+result$PRICE < 0
+result[which(result$PRICE < 0)]
+result[which(result$PRICE > 0)]
+result[PRICE > 0)]
+result[which(result$PRICE > 0), ]
+result[which(result$PRICE < 0), ]
+rsv_src_data[rsv_src_data$tcode == 'GINTMONG', ]
+nrow(rsv_src_data[rsv_src_data$tcode == 'GINTMONG', ])
+rsv_prices_dpg_long[which(rsv_prices_dpg_long$tcode == 'GINTMONG'), ]
+View(svnc_m_long)
+View(rsv_prices_dpg_long)
+rsv_prices_dpg_long[which(rsv_prices_dpg_long$GTP_price < 0), ]
+rsv_prices_dpg_long[which(rsv_prices_dpg_long$GTP_price > 0), ]
+predict_price <- function(cur_ts, h, n) {
+tryCatch(
+{
+print("Building Holt-Winters model...")
+current_model <- HoltWinters(cur_ts)
+return (predict(current_model, n = h)[n])
+}, error = function(cond) {
+message("Holt-Winters model optimization failed to converge!")
+print("Starting calculation with default algorithm...")
+print("Algorithm: prediction = prev_month_cur_year/
+(prev_month_prev_year*cur_month_prev_year)")
+return (last(lag(cur_ts)) / last(lag(cur_ts, 13)) * last(lag(cur_ts, 12)))
+}
+)
+}
+hwforecast_n_step_fwrd <- function(df, group.var, date.var, target.var, h, n) {
+require(xts)
+require(tseries)
+predictions <- list()
+# safe copying
+tbl <- df[, c(group.var , date.var, target.var)]
+tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+for (i in unique(tbl[, group.var])) {
+# partitioning by group_var values
+one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+start_date <- min(one_piece[, date.var])
+# making a TS object
+one_piece_ts <- toTimeSeries(one_piece, "date", 12, start_date)
+predictions[i] <- predict_price(one_piece_ts, h, n)
+print(predictions[i])
+}
+return (predictions)
+}
+rsv_prices_dpg_short[which(rsv_prices_dpg_short$GTP_price > 0), ]
+rsv_prices_dpg_short[which(rsv_prices_dpg_short$GTP_price < 0), ]
+predictions_short <- shortForecast(rsv_prices_dpg_short,
+"tcode", "date", "GTP_price", 1, 1)
+as.numeric(predictions_short) <0
+predictions_long <- hwforecast_n_step_fwrd(rsv_prices_dpg_long,
+"tcode", "date", "GTP_price", 1, 1)
+as.numeric(predictions_long) <0
+predictions_long_df <- data.frame(GTP_CODE = names(predictions_long),
+PRICE = as.numeric(predictions_long))
+predictions_short_df <- data.frame(GTP_CODE = names(predictions_short),
+PRICE = as.numeric(predictions_short))
+View(predictions_long_df)
+predictions_long_df[which(predictions_long_df$PRICE < 0), ]
+pnefte47 <- rsv_prices_dpg_long[rsv_prices_dpg_long$tcode == 'PNEFTE47', ]
+head(pnefte47)
+pnefte47 <- pnefte47[, c('Tdate', 'GTP_Price')]
+pnefte47 <- pnefte47[, c('Tdate', 'GTP_price')]
+head(pnefte47)
+pnefte47_ts <- toTimeSeries(pnefte47, "date", 12, min(pnefte47$Tdate))
+pnefte47_ts <- toTimeSeries(pnefte47, "Tdate", 12, min(pnefte47$Tdate))
+pnefte47_ts <- toTimeSeries(pnefte47, "Tdate", 12, min(pnefte47$Tdate))
+head(pnefte47)
+pnefte47_ts <- toTimeSeries(pnefte47, "date", 12, min(pnefte47$Tdate))
+pnefte47_ts <- toTimeSeries(pnefte47, "Tdate", 12, min(pnefte47$Tdate))
+}
+hwforecast_n_step_fwrd <- function(df, group.var, date.var, target.var, h, n) {
+require(xts)
+require(tseries)
+predictions <- list()
+# safe copying
+tbl <- df[, c(group.var , date.var, target.var)]
+tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+for (i in unique(tbl[, group.var])) {
+# partitioning by group_var values
+one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+start_date <- min(one_piece[, date.var])
+# making a TS object
+one_piece_ts <- toTimeSeries(one_piece, date.var, 12, start_date)
+predictions[i] <- predict_price(one_piece_ts, h, n)
+print(predictions[i])
+}
+return (predictions)
+}
+predictions_long <- hwforecast_n_step_fwrd(rsv_prices_dpg_long,
+"tcode", "date", "GTP_price", 1, 1)
+predictions_long_df <- data.frame(GTP_CODE = names(predictions_long),
+PRICE = as.numeric(predictions_long))
+predictions_long_df[which(predictions_long_df$PRICE < 0), ]
+pnefte47_ts <- toTimeSeries(pnefte47, "Tdate", 12, min(pnefte47$Tdate))
+class(pnefte47$Tdate)
+pnefte47 <- rsv_prices_dpg_long[rsv_prices_dpg_long$tcode == 'PNEFTE47', ]
+pnefte47 <- pnefte47[, c('date', 'GTP_price')]
+pnefte47_ts <- toTimeSeries(pnefte47, "date", 12, min(pnefte47$Tdate))
+pnefte47_ts <- toTimeSeries(pnefte47, "date", 12, min(pnefte47$date))
+pnefte47_hw <- HoltWinters(pnefte47_ts)
+plot(pnefte47_hw)
+pnefte47_ts
+pnefte47
+View(pnefte47)
+plot(pnefte47$GTP_price, pnefte47$date)
+plot(pnefte47$date, pnefte47$GTP_price)
+hwforecast_n_step_fwrd <- function(df, group.var, date.var, target.var, h, n) {
+require(xts)
+require(tseries)
+predictions <- list()
+# safe copying
+tbl <- df[, c(group.var , date.var, target.var)]
+tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+for (i in unique(tbl[, group.var])) {
+# partitioning by group_var values
+one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+start_date <- min(one_piece[, date.var])
+# making a TS object
+one_piece_ts <- toTimeSeries(one_piece, date.var, 12, start_date)
+prediction <- predict_price(one_piece_ts, h, n)
+if (prediction < 0) prediction <- predict_price_short(one_piece_ts, h, n)
+predictions[i] <- prediction
+print(predictions[i])
+}
+return (predictions)
+}
+predictions_long <- hwforecast_n_step_fwrd(rsv_prices_dpg_long,
+"tcode", "date", "GTP_price", 1, 1)
+predictions_long_df <- data.frame(GTP_CODE = names(predictions_long),
+PRICE = as.numeric(predictions_long))
+predictions_long_df[which(predictions_long_df$PRICE < 0), ]
+max(predictions_long_df$PRICE)
+min(predictions_long_df$PRICE)
+View(predictions_long_df[order(-predictions_long_df$PRICE), ])
+,thb

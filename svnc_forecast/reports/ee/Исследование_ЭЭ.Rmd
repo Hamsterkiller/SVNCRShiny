@@ -1,0 +1,22 @@
+---
+title: "Исследование динамики СВНЦ на электроэнергию"
+author: "Земсков И. А."
+date: "24 мая 2016 г."
+output: pdf_document
+---
+
+# Введение
+Данное исследование посвящено проблеме прогнозирования средневзвешенной цены на электрическую энергию по группам точек поставок гарантирущих поставщиков электроэнергии 
+и мощности ценовых зон на оптовом рынке электроэнергии и мощности.
+
+```{r}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

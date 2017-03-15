@@ -1,0 +1,71 @@
+library(shiny)
+library(dplyr)
+library(ggplot2)
+# gets participant names by there codes
+getPName <- function(pcd) {
+  if (is.null(pcd))
+    return ("")
+  pcode <- pcd
+  pcode_data <- svnc_data[svnc_data$PCODE == pcode, c("TDATE", "PNAME")]
+  max_date <- max(pcode_data$TDATE)
+  result <-  unique(pcode_data[which(pcode_data$TDATE == max_date), c("PNAME")])
+  return (result)
+}
+
+getRegions <- function(pcodes) {
+  res <- svnc_data[svnc_data$PCODE == pcodes, c("REGION_NAME")]
+  return(res)
+}
+
+getFactParticipant <- function(pcode, reg_name) {
+
+  data <- svnc_data[svnc_data$PCODE == pcode & svnc_data$REGION_NAME == reg_name,
+                    c("TDATE", "PCODE", "PNAME", "TCODE", "REGION_CODE", "REGION_NAME", 
+                      "P_NC_UNREG_AVG")]
+  data$TDATE <- as.Date(data$TDATE)
+  data$P_R <- paste(data$PCODE, data$REGION_NAME)
+  dataParticipant <- summarize(group_by(data, TDATE, PNAME,  P_R), 
+                               SVNC_M = mean(P_NC_UNREG_AVG))
+  return(dataParticipant)
+}
+
+getDPGQuant <- function(pcd, reg) {
+  pcd_reg <- svnc_data[svnc_data$PCODE == pcd & svnc_data$REGION_NAME == reg, 
+                       c("TDATE", "PNAME", "TCODE", "REGION_NAME", "P_NC_UNREG_AVG")]
+  if (nrow(pcd_reg) == 0)
+    return ("У данного участника нет ГТП в данном субъекте!")
+  result <- paste("Общее количество ГТП выбранных участников в регионах =", 
+                  as.character(length(unique(pcd_reg$TCODE))))
+  return (result)
+}
+
+
+shinyServer(
+  function(input, output) {
+    
+    output$dpg_quantity <- renderPrint({
+      getDPGQuant(input$pcode, input$regions)
+    })
+    
+    output$regions <- renderUI({
+      selectInput(inputId = "regions", label = "Выберите субъект федерации", 
+                              choices = getRegions(input$pcode), multiple = TRUE)
+
+    })
+    
+    output$fact_svnc <- renderPlot({
+      d <- getFactParticipant(input$pcode, input$regions)
+      ggplot(d, aes(x = TDATE, y = SVNC_M, colour = P_R)) +
+        geom_line() + xlab("") + ylab("СВНЦ на мощность, руб./МВт") +
+        theme(text = element_text(size = 18), legend.position = 'bottom') 
+    })
+    
+    output$svnc_table <- renderTable({
+      d <- getFactParticipant(input$pcode, input$regions)
+      d$TDATE <- format(d$TDATE,'%Y-%m-%d')
+      names(d) <- c("Дата", "Наименование участника", "Код участника - Регион", "СВНЦ на мощность, руб./МВт")
+      d
+    })
+    
+  }
+)

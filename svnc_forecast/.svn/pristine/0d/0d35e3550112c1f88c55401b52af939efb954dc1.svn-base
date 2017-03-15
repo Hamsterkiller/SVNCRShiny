@@ -1,0 +1,13 @@
+rangeByHistorySize <-
+function(dataset, keyFactor) {
+  #creating output df
+  historyRanks <- data.frame(FactorLevel=as.character(), 
+                             HistorySize=as.integer())
+  # for each unique value of the factor var do...
+  for (i in levels(keyFactor)) {
+    #historyRow <- data.frame(FactorLevel = i, HistorySize = nrow(dataset[which(dataset$keyFactor == i), ]))
+    historyRanks <- rbind(historyRanks, data.frame(FactorLevel = i, 
+                      HistorySize = nrow(dataset[which(keyFactor == i), ])))
+  }
+  return (historyRanks[order(-historyRanks$HistorySize), ])
+}

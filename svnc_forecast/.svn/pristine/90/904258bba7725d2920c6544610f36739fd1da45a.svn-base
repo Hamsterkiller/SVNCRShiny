@@ -1,0 +1,10 @@
+# clearing workspace
+rm(list = ls())
+# loading fact data
+fact_data <- read.csv(file = "C:/!zemskov/svnc_forecast/data_sources/fact_jun_2016.csv")
+comp_month <- "2016-06-01"
+fact_data$TDATE <- as.Date(fact_data$TDATE)
+fact_data <- fact_data[fact_data$TDATE == as.Date(comp_month), 
+                       c("TDATE", "PCODE", "TCODE", "REGION_CODE", "P_NC_UNREG_AVG")]
+#loading forecasts
+fcst_data <- read.csv(file = "C:/!zemskov/svnc_forecast/data_sources/svnc_m_fcst_jun2016.csv")

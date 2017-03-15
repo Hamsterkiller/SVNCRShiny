@@ -1,0 +1,19 @@
+library(shiny)
+
+fluidPage(
+  fluidRow(
+    headerPanel('СВНЦ на мощность по ГП')),
+    fluidRow(
+      column(4, 
+      h3('Фильтры'),
+      selectInput(inputId = "pcode", label = "Сначала выберите коды участников", 
+                  choices = pcodes, multiple = TRUE),
+      uiOutput(inputId = "regs", "regions"),
+      verbatimTextOutput(outputId = "dpg_quantity")),
+      column(8, h3('Динамика СВНЦ на мощность'),
+             plotOutput('fact_svnc'))
+      ),
+    fluidRow(
+      column(12, tableOutput('svnc_table'), offset = 1)
+    )
+)

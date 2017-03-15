@@ -1,0 +1,205 @@
+
+# creating list of DPGs with the siaze of it's history (in months)
+rangeByHistorySize <- function(dataset, keyFactor) {
+  #creating output df
+  historyRanks <- data.frame(FactorLevel=as.character(), 
+                             HistorySize=as.integer())
+  # for each unique value of the factor var do...
+  for (i in levels(keyFactor)) {
+    #historyRow <- data.frame(FactorLevel = i, HistorySize = nrow(dataset[which(dataset$keyFactor == i), ]))
+    historyRanks <- rbind(historyRanks, data.frame(FactorLevel = i, 
+                                                   HistorySize = nrow(dataset[which(keyFactor == i), ])))
+  }
+  return (historyRanks[order(-historyRanks$HistorySize), ])
+}
+
+## dealing with NA's
+## function, that imputing NA's with median vaues in each group
+imputeMean <- function(impute.var, filter.var, var.levels) {
+  for (v in var.levels) {
+    impute.var[ which(filter.var == v)] <- impute(impute.var[
+      which(filter.var == v)
+      ], fun = mean)
+  }
+  return (impute.var)
+}
+
+# function: devide random component for each group
+## t - data.frame to be processed
+## group_var - grouping variable of t (must be passed as string in quotes: 'group')
+## date_var - date-variable of t (must be passed as string in quotes: 'date')
+## ts_var - numeric variable (must be passed as string in quotes: 'value')
+separateRandomTSComponent <- function(t, group_var, date_var, ts_var) {
+  
+  # loading required libraries
+  require(xts)
+  
+  # safe copying
+  dpgtable <- t
+  dpgtable <- dpgtable[order(dpgtable[ , group_var], dpgtable[ , date_var]), ]
+  # main cycle
+  for (i in unique(dpgtable[, group_var])) {
+    # creating TS-object
+    one_piece <- dpgtable[which(dpgtable[ , group_var] == i), ] 
+    one_piece_s <- one_piece[ , c(group_var, date_var, ts_var)]
+    print(nrow(one_piece_s))
+    starting_point <- min(one_piece_s[ , date_var])
+    one_piece_ts <- xts(one_piece_s[ , ts_var], order.by=as.Date(one_piece[ , date_var]))
+    one_piece_ts_final <- ts(one_piece_ts, frequency=12, start=starting_point)
+    
+    # separating random component of the ts-variable
+    randomComponent <- decompose(one_piece_ts_final)$random
+    dpgtable[which(dpgtable[ , group_var] == i), 'RandomTSComponent'] <- randomComponent 
+  }
+  
+  #rm(one_piece, one_piece_s, starting_point, one_piece_ts,one_piece_ts_final, randomComponent)
+  return (dpgtable)
+}
+
+# auxillary function for viewing source code of R function
+showSourceCode <- function(name) {
+  name # this is what you did without having a good enough answer
+  methods(name) # Next step, ask for the method: 'princomp.default'
+  query <- paste(name, '.default', sep = '')
+  getAnywhere(query) # this will show you the code
+}
+
+# FUNCTION that applies other functions to the panaled data (grouped by some variable)
+applyByGroups <- function(t, id_var, group_var, value_var, fun) {
+  
+  # safe copying
+  table <- t
+  table <- table[order(table[ , group_var], table[ , id_var]), ]
+  # main cycle
+  for (i in unique(table[, group_var])) {
+    # partitioning by group_var values
+    one_piece  <- table[which(table[ , group_var] == i), ] 
+    result_var_name <- paste(deparse(substitute(fun)), "results", sep = "_")
+    table[which(table[, group_var] == i), result_var_name] <- as.numeric(fun(one_piece[, value_var]))
+  }
+  
+  #rm(one_piece, one_piece_s, starting_point, one_piece_ts,one_piece_ts_final, randomComponent)
+  return (table)
+}
+
+# Function predicts h next values of the indicator and returns n-th prediction
+# Designed to apply Holt-Winters Exp. Smoothing algorithm forr time-series with 
+# more than 24 months history length
+# cur_ts - time series
+# h - number of steps to predict fur
+# n - number of the prediction to return
+predict_price <- function(cur_ts, h, n) {
+  tryCatch(
+    {
+      print("Building Holt-Winters model...")
+      current_model <- HoltWinters(cur_ts)
+      return (predict(current_model, n = h)[n])
+    }, error = function(cond) {
+      message("Holt-Winters model optimization failed to converge!")
+      print("Starting calculation with default algorithm...")
+      print("Algorithm: prediction = prev_month_cur_year/
+            (prev_month_prev_year*cur_month_prev_year)")
+      return (last(lag(cur_ts)) / last(lag(cur_ts, 13)) * last(lag(cur_ts, 12)))
+    }
+  )
+}
+
+# Function applies forecasting method to paneled time series with history size 
+# more than 21 months
+hwforecast_n_step_fwrd <- function(df, group.var, date.var, target.var, h, n) {
+  require(xts)
+  require(tseries)
+  predictions <- list()
+  # safe copying
+  tbl <- df[, c(group.var , date.var, target.var)]
+  tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+  for (i in unique(tbl[, group.var])) {
+    # partitioning by group_var values
+    one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+    start_date <- min(one_piece[, date.var])
+    # making a TS object
+    one_piece_ts <- toTimeSeries(one_piece, date.var, 12, start_date)
+    prediction <- predict_price(one_piece_ts, h, n)
+    if (prediction < 0) prediction <- predict_price_short(one_piece_ts, h, n)
+    predictions[i] <- prediction
+    print(predictions[i])
+  }
+  return (predictions)
+}
+
+# Function predicts h next values of the indicator and returns n-th prediction
+# Designed to apply Holt-Winters Exp. Smoothing algorithm forr time-series with 
+# less than 24 months history length
+# cur_ts - time series
+# h - number of steps to predict fur
+# n - number of the prediction to return
+predict_price_short <- function(cur_ts, h, n) {
+  require(forecast)
+  tryCatch(
+    {
+      print("Building Arima model...")
+      current_model <- auto.arima(cur_ts)
+      return (predict(current_model, n.ahead = h)[1][[1]][n])
+    }, error = function(cond) {
+      message("Arima model optimization failed to converge!")
+      message("MA prediction failed!")
+      print("Calculating simple mean...")
+      return (mean(cur_ts))
+    }
+  )
+}
+
+# Function applies forecasting method to paneled time series with history size 
+# less than 21 months
+shortForecast <- function(df, group.var, date.var, target.var, h, n) {
+  require(TTR)
+  require(xts)
+  require(tseries)
+  predictions <- list()
+  # safe copying
+  tbl <- df[, c(group.var , date.var, target.var)]
+  tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+  for (i in unique(tbl[, group.var])) {
+    # partitioning by group_var values
+    one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+    start_date <- min(one_piece[, date.var])
+    # making a TS object
+    one_piece_ts <- toTimeSeries(one_piece, date.var, 1, start_date)
+    predictions[i] <- predict_price_short(one_piece_ts, h, n)
+    print(predictions[i])
+  }
+  return (predictions)
+}
+
+# Function applies forecasting method to paneled time series with history size 
+# more than 21 months
+applyForecastingMethod <- function(df, group.var, date.var, target.var, h, n) {
+  require(xts)
+  require(tseries)
+  predictions <- list()
+  # safe copying
+  tbl <- df[, c(group.var , date.var, target.var)]
+  tbl <- tbl[order(tbl[ , group.var], tbl[ , date.var]), ]
+  for (i in unique(tbl[, group.var])) {
+    # partitioning by group_var values
+    one_piece  <- tbl[which(tbl[ , group.var] == i), c(date.var, target.var)]
+    start_date <- min(one_piece[, date.var])
+    # making a TS object
+    one_piece_ts <- toTimeSeries(one_piece, "date", 12, start_date)
+    predictions[i] <- predict_price(one_piece_ts, h, n)
+    print(predictions[i])
+  }
+  return (predictions)
+}
+
+# creating time-series object from data.frame object
+# df - source data.frame object
+# date_var - String object representing the name of the Date variable
+# start_date - String object, representing the initial point in time
+## !!! length must be >=24 months
+toTimeSeries <- function(df, date_var, freq, start_date) {
+  require(xts)
+  as_ts <- xts(df[ , !colnames(df) %in% c(date_var)], order.by = df[ , date_var])
+  result <- ts(as_ts, frequency = freq, start = as.Date(start_date))
+  return (result)
+}

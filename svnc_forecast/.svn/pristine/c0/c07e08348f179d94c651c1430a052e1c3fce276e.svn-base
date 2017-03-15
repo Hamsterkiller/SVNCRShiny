@@ -1,0 +1,113 @@
+# Loading libraries
+library(RJDBC)
+library(rJava)
+
+# Set JAVA_HOME, set max. memory, and load rJava library
+Sys.setenv(JAVA_HOME='C:/Program Files/Java/jre1.8.0_65/bin')
+#options(java.parameters="-Xmx2g")
+
+# Checking Java version
+.jinit()
+print(.jcall("java/lang/System", "S", "getProperty", "java.version"))
+
+# Create connection driver and open connection
+## ORACLE:
+jdbcDriver <- JDBC(driverClass="oracle.jdbc.OracleDriver", classPath="C:/!zemskov/ORALIBS/ojdbc7.jar")
+jdbcConnection <- dbConnect(jdbcDriver, "jdbc:oracle:thin:@//hx5-06.rosenergo.com:1521/svncgrey.rosenergo.com", "zemskov", "Lun2i2q")
+
+# VERTICA:
+#verticaDriver <- JDBC(driverClass = "com.vertica.jdbc.Driver", 
+#                      classPath="C:/!zemskov/VERTICA_JDBC/vertica-jdbc-7.2.3-0.jar")
+#verticaConnection <- dbConnect(verticaDriver, 
+#                               "jdbc:vertica://vertica-red-srv.rosenergo.com:5433/DWH", 
+#                               "zemskov", "Lun2i2q")
+
+# Testing connection with simple query
+#current_date <- dbGetQuery(jdbcConnection, "SELECT current_date FROM dual")
+current_date <- dbGetQuery(jdbcConnection, "SELECT current_date FROM dual")
+
+begin_date <- "2011-01-01"
+end_date <- Sys.Date()
+
+# extract data with fact prices by dpg
+extractSVNCN_FACT <- function(connection, begin_date, end_date, ...) {
+  message("starting query ...")
+  message("from ", begin_date, " to ", end_date)
+  query <- 
+    paste("
+          with table_period as
+          (
+            select s.begin_date, max(s.session_id) as session_id, s.final_calculation_flag
+            from 
+          (
+            select 
+              begin_date, 
+              max(final_calculation_flag) as final_calculation_flag
+            from 
+              rep_nov.frs_pr_session
+            where
+              begin_date between to_date('",begin_date,"', 'yyyy-mm-dd') 
+              and to_date('",end_date,"','yyyy-mm-dd')
+            group by 
+              begin_date
+          ) ts,
+            rep_nov.frs_pr_session s
+          where 
+            ts.begin_date = s.begin_date 
+            and ts.final_calculation_flag = s.final_calculation_flag
+          group by
+            s.begin_date, s.final_calculation_flag
+          order by
+            begin_date
+          )
+          select
+            s.session_id
+            ,s.final_calculation_flag
+            ,s.begin_date as tdate
+            ,p.full_name as pname
+            ,p.trader_code as pcode
+            ,t.trader_code as tcode
+            ,t.region_code as region_code
+            ,d.p_nc_unreg_avg * 1000	as P_nc_unreg_avg
+          from
+            table_period tp
+            join rep_nov.frs_pr_session s 
+              on TP.session_id = s.session_id and s.begin_date = tp.begin_date
+            join rep_nov.app_session_list c 
+              on TP.session_id = c.session_id
+            join rep_nov.session_gtp_dim d 
+              on TP.session_id = d.session_id
+            left join rep_nov.session_gtp_dim sgd_1 
+              on c.prev_session_id = sgd_1.session_id 
+              AND d.gtp_id = sgd_1.gtp_id,				  
+            rep_nov.trader t,
+            rep_nov.trader p
+          where
+            t.real_trader_id = d.gtp_id
+            and t.parent_object_id = p.real_trader_id
+            and t.trader_type = 100
+            and s.begin_date between t.begin_date and t.end_date
+            and s.begin_date between p.begin_date and p.end_date					 
+          order by
+            tdate, tcode ,final_calculation_flag")
+  cursor <- dbGetQuery(connection, query)
+  message("query was executed successfuly")
+  return (cursor)
+}
+
+# retrieving data from the database
+retrieved_data <- extractSVNCN_FACT(jdbcConnection, begin_date, end_date)
+
+# SAVE FACT DATA
+write.csv(retrieved_data, "C:/!zemskov/svnc_forecast/data_sources/fact_jul_2016.csv")
+
+# saving accumulated data
+save(retrieved_data, file = "SVNC_FACT_N.RData")
+
+
+
+
+
+
+
+

@@ -1,0 +1,90 @@
+\name{forecastHoltWinters_M}
+\alias{forecastHoltWinters_M}
+\docType{data}
+\title{
+%%   ~~ data name/kind ... ~~
+}
+\description{
+%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+}
+\usage{data("forecastHoltWinters_M")}
+\format{
+  The format is:
+List of 10
+ $ method   : chr "HoltWinters"
+ $ model    :List of 9
+  ..$ fitted      : mts [1:49, 1:4] 282231 165438 199373 238209 250002 ...
+  .. ..- attr(*, "dimnames")=List of 2
+  .. .. ..$ : NULL
+  .. .. ..$ : chr [1:4] "xhat" "level" "trend" "season"
+  .. ..- attr(*, "tsp")= num [1:3] 2012 2016 12
+  .. ..- attr(*, "class")= chr [1:3] "mts" "ts" "matrix"
+  ..$ x           : ts [1:61, 1] 273174 217084 228288 236932 240393 ...
+  .. ..- attr(*, "index")= atomic [1:61] 1.29e+09 1.30e+09 1.30e+09 1.30e+09 1.30e+09 ...
+  .. .. ..- attr(*, "tzone")= chr "UTC"
+  .. .. ..- attr(*, "tclass")= chr "Date"
+  .. ..- attr(*, ".indexCLASS")= chr "Date"
+  .. ..- attr(*, "tclass")= chr "Date"
+  .. ..- attr(*, ".indexTZ")= chr "UTC"
+  .. ..- attr(*, "tzone")= chr "UTC"
+  .. ..- attr(*, "dimnames")=List of 2
+  .. .. ..$ : NULL
+  .. .. ..$ : chr "Series 1"
+  .. ..- attr(*, "tsp")= num [1:3] 2011 2016 12
+  ..$ alpha       : Named num 0.12
+  .. ..- attr(*, "names")= chr "alpha"
+  ..$ beta        : Named num 0.0544
+  .. ..- attr(*, "names")= chr "beta"
+  ..$ gamma       : Named num 0.523
+  .. ..- attr(*, "names")= chr "gamma"
+  ..$ coefficients: Named num [1:14] 363744 2818 -15727 31886 17850 ...
+  .. ..- attr(*, "names")= chr [1:14] "a" "b" "s1" "s2" ...
+  ..$ seasonal    : chr "additive"
+  ..$ SSE         : num 4.85e+10
+  ..$ call        : language HoltWinters(x = training_ts_M, seasonal = "additive")
+  ..- attr(*, "class")= chr "HoltWinters"
+ $ level    : num [1:2] 80 95
+ $ mean     : Time-Series [1:24] from 2016 to 2018: 350835 401266 390049 411999 367220 ...
+ $ lower    : num [1:24, 1:2] 310469 360576 349003 370565 325365 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr [1:2] "80%" "95%"
+ $ upper    : num [1:24, 1:2] 391201 441957 431095 453433 409075 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr [1:2] "80%" "95%"
+ $ x        : ts [1:61, 1] 273174 217084 228288 236932 240393 ...
+  ..- attr(*, "index")= atomic [1:61] 1.29e+09 1.30e+09 1.30e+09 1.30e+09 1.30e+09 ...
+  .. ..- attr(*, "tzone")= chr "UTC"
+  .. ..- attr(*, "tclass")= chr "Date"
+  ..- attr(*, ".indexCLASS")= chr "Date"
+  ..- attr(*, "tclass")= chr "Date"
+  ..- attr(*, ".indexTZ")= chr "UTC"
+  ..- attr(*, "tzone")= chr "UTC"
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr "Series 1"
+  ..- attr(*, "tsp")= num [1:3] 2011 2016 12
+ $ xname    : chr "x"
+ $ fitted   : Time-Series [1:49] from 2012 to 2016: 282231 165438 199373 238209 250002 ...
+ $ residuals: ts [1:49, 1] 437 3500 4180 3783 4298 ...
+  ..- attr(*, "tsp")= num [1:3] 2012 2016 12
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr "object$x"
+ - attr(*, "class")= chr "forecast"
+}
+\details{
+%%  ~~ If necessary, more details than the __description__ above ~~
+}
+\source{
+%%  ~~ reference to a publication or URL from which the data were obtained ~~
+}
+\references{
+%%  ~~ possibly secondary sources and usages ~~
+}
+\examples{
+data(forecastHoltWinters_M)
+## maybe str(forecastHoltWinters_M) ; plot(forecastHoltWinters_M) ...
+}
+\keyword{datasets}

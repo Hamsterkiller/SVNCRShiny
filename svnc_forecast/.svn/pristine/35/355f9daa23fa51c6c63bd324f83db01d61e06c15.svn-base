@@ -1,0 +1,28 @@
+\name{SVNC_EE_norm}
+\alias{SVNC_EE_norm}
+\docType{data}
+\title{
+%%   ~~ data name/kind ... ~~
+}
+\description{
+%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+}
+\usage{data("SVNC_EE_norm")}
+\format{
+  The format is:
+ num [1:62] -0.288 -0.302 -0.307 -0.308 -0.258 ...
+}
+\details{
+%%  ~~ If necessary, more details than the __description__ above ~~
+}
+\source{
+%%  ~~ reference to a publication or URL from which the data were obtained ~~
+}
+\references{
+%%  ~~ possibly secondary sources and usages ~~
+}
+\examples{
+data(SVNC_EE_norm)
+## maybe str(SVNC_EE_norm) ; plot(SVNC_EE_norm) ...
+}
+\keyword{datasets}

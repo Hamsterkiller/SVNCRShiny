@@ -1,0 +1,31 @@
+# clearing workspace
+rm(list = ls())
+# loading fact data
+fact_data <- read.csv(file = "C:/!zemskov/svnc_forecast/data_sources/fact_jul_2016.csv")
+
+comp_month <- "2016-07-01"
+fact_data$TDATE <- as.Date(fact_data$TDATE)
+fact_data_filtered <- fact_data[fact_data$TDATE == as.Date(comp_month), 
+                       c("TDATE", "PCODE", "TCODE", "REGION_CODE", "P_NC_UNREG_AVG")]
+library(dplyr)
+fact_data_grouped <- summarize(group_by(fact_data_filtered, TDATE, PCODE,  REGION_CODE), 
+                               SVNC_M_FACT = mean(P_NC_UNREG_AVG))
+fact_data_grouped <- fact_data_grouped[, c("PCODE", "REGION_CODE", "SVNC_M_FACT")]
+#loading forecasts
+library(xlsx)
+fcst_data <- read.xlsx(file = "C:/!zemskov/svnc_forecast/data_sources/svnc_m_fcst_jul2016.xlsx", 
+                       sheetName = "SVNC_M")
+fcst_data <- fcst_data[, c("PCODE", "REGION_CODE", "PRICE")]
+plan_fact <- merge(fcst_data, fact_data_grouped, 
+                   by.x = c('PCODE', 'REGION_CODE'), by.y = c('PCODE', 'REGION_CODE'), 
+                   all.x = TRUE, sort = TRUE)
+quality <- na.omit(plan_fact)
+quality$error <- quality$PRICE - quality$SVNC_M_FACT
+quality$abs_error <- abs(quality$PRICE - quality$SVNC_M_FACT)
+quality$pcnt_error <- quality$abs_error / quality$SVNC_M_FACT * 100
+quality$MAE <- mean(quality$abs_error)
+quality$MAE <- mean(quality$pcnt_error)
+quality$median_error <- median(quality$abs_error)
+quality$pcnt_median_error <- median(quality$pcnt_error)
+
+

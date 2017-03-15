@@ -1,0 +1,179 @@
+rm(list = ls())
+library(shiny)
+library(dplyr)
+library(ggplot2)
+library(xts)
+library(tsauxfunc)
+
+# get participant-region table from the last available month data
+getParticipantsRegions <- function() {
+  res <- svnc_data[svnc_data$TDATE == max(svnc_data$TDATE), 
+                   c("PCODE", "PNAME", "REGION_NAME")]
+}
+
+# gets participant names by there codes
+getPName <- function(pcd) {
+  if (is.null(pcd))
+    return ("")
+  pcode <- pcd
+  pcode_data <- svnc_data[svnc_data$PCODE == pcode, c("TDATE", "PNAME")]
+  max_date <- max(pcode_data$TDATE)
+  result <-  unique(pcode_data[which(pcode_data$TDATE == max_date), c("PNAME")])
+  return (result)
+}
+
+getRegions <- function(pcodes) {
+  
+  res <- svnc_data[svnc_data$PCODE == pcodes, c("REGION_NAME")]
+  return(res)
+}
+
+getFactParticipant <- function(pcode, reg_name) {
+  data <- svnc_data[svnc_data$PCODE %in% pcode & svnc_data$REGION_NAME %in% reg_name,
+                    c("TDATE", "PCODE", "PNAME", "TCODE", "REGION_CODE", "REGION_NAME", 
+                      "P_NC_UNREG_AVG", "P_VC_UNREG_AVG", "PIKE_FACT", "VOLUME")]
+  #data$TDATE <- as.Date(data$TDATE)
+  data$P_R <- paste(data$PCODE, data$REGION_NAME)
+  data$N_COST <- data$P_NC_UNREG_AVG * data$PIKE_FACT
+  data$EE_COST <- data$P_VC_UNREG_AVG * data$VOLUME
+  library(dplyr)
+  dataParticipant <- summarize(group_by(data, TDATE, PNAME, P_R), 
+                              SVNC_M = sum(N_COST)/sum(PIKE_FACT), 
+                              SVNC_EE = sum(EE_COST)/sum(VOLUME))
+  dataParticipant <- dataParticipant[order(dataParticipant$P_R), ]
+  return(dataParticipant)
+}
+
+getDPGQuant <- function(pcd, reg) {
+  pcd_reg <- svnc_data[svnc_data$PCODE == pcd & svnc_data$REGION_NAME == reg, 
+                       c("TDATE", "PNAME", "TCODE", "REGION_NAME", "P_NC_UNREG_AVG")]
+  if (nrow(pcd_reg) == 0)
+    return ("У данного участника нет ГТП в данном субъекте!")
+  result <- paste("Общее количество ГТП выбранных участников в регионах =", 
+                  as.character(length(unique(pcd_reg$TCODE))))
+  return (result)
+}
+
+# forecasting for single participant
+singleForecast <- function(pcode, reg_name, nsteps) {
+  require(tsauxfunc)
+  # filtering and preparing data
+  last_fact_date <- as.character(cut(max(svnc_data$TDATE), "month"))
+  print(last_fact_date)
+  data <- svnc_data[svnc_data$PCODE == pcode & svnc_data$REGION_NAME == reg_name,
+                    c("TDATE", "PCODE", "PNAME", "TCODE", "REGION_CODE", "REGION_NAME", 
+                      "P_NC_UNREG_AVG", "P_VC_UNREG_AVG")]
+  data <- filterActuals(data, "TDATE", "TCODE", last_fact_date)
+  #data$TDATE <- as.Date(data$TDATE)
+  data <- data[, c("TDATE", "TCODE", "PCODE", "REGION_NAME", 
+                   "P_NC_UNREG_AVG", "P_VC_UNREG_AVG")]
+  print(nrow(data))
+  # calculating history size (with funcion 'rangeByHistorySize' from tsauxfunc package)
+  data_hs <- rangeByHistorySize(data, as.factor(data$TCODE))
+  print(nrow(data_hs))
+  data_hs_merged <- merge(data, data_hs, 
+                            by.x = 'TCODE', by.y = 'FactorLevel', all.x = TRUE, sort = TRUE)
+  data_hs_merged <- data_hs_merged[order(data_hs_merged$TCODE, data_hs_merged$TDATE), ]
+  
+  # separating DPGs with long and short history
+  data_short <- data_hs_merged[data_hs_merged$HistorySize < 24 , ] 
+  data_long <- data_hs_merged[data_hs_merged$HistorySize >= 24 , ]
+  # making forecasts
+  if (nrow(data_long) > 0) {
+    fcst_svnc_m_long <- hwforecast_n_step_fwrd(data_long, "TCODE", 
+                                             "TDATE", "P_NC_UNREG_AVG", 2, 2)
+    fcst_svnc_ee_long <- hwforecast_n_step_fwrd(data_long, "TCODE", 
+                                               "TDATE", "P_VC_UNREG_AVG", 2, 2)
+    
+    df_fcst_long <- data.frame(TCODE = names(fcst_svnc_m_long),
+                               P_NC_UNREG_AVG = as.numeric(fcst_svnc_m_long), 
+                               P_VC_UNREG_AVG = as.numeric(fcst_svnc_ee_long))
+  } else {
+    df_fcst_long <- data.frame()
+  }
+  
+  if (nrow(data_short) > 0) {
+    fcst_svnc_m_short <- shortForecast(data_short, "TCODE", 
+                                     "TDATE", "P_NC_UNREG_AVG", 2, 2)
+    fcst_svnc_ee_short <- shortForecast(data_short, "TCODE", 
+                                       "TDATE", "P_VC_UNREG_AVG", 2, 2)
+    df_fcst_short <- data.frame(TCODE = names(fcst_svnc_m_short), 
+                                P_NC_UNREG_AVG = as.numeric(fcst_svnc_m_short),
+                                P_VC_UNREG_AVG = as.numeric(fcst_svnc_ee_short))
+  } else {
+    df_fcst_short <- data.frame()
+  }
+  
+  # merging forecasted values
+  if (nrow(df_fcst_short) > 0 & nrow(df_fcst_long) > 0) {
+    fcst_df <- rbind(df_fcst_long, df_fcst_short)
+  } else if (nrow(df_fcst_short) > 0 & nrow(df_fcst_long) == 0) {
+    fcst_df <- df_fcst_short
+  } else {
+    fcst_df <- df_fcst_long
+  }
+  supp_data <- data[data$TDATE == max(data$TDATE), 
+                      c('TCODE', 'PCODE', 'REGION_NAME')]
+  dpg_fcst <- merge(fcst_df, supp_data, 
+                  by = 'TCODE', all.x = TRUE, sort = TRUE)[, 
+                  c('PCODE', 'REGION_NAME', 'TCODE', 'P_NC_UNREG_AVG', 'P_VC_UNREG_AVG')]
+  res <- summarize(group_by(dpg_fcst, PCODE, REGION_NAME), 
+                   SVNC_M_FCST = mean(P_NC_UNREG_AVG), 
+                   SVNC_EE_FCST = mean(P_VC_UNREG_AVG))
+  names(res) <- c("Код участника", "Регион", "Проноз СВНЦ на мощность", "Прогноз СВНЦ на ЭЭ")
+  return(res)
+}
+
+# forecating for all participants
+forecastForEach <- function(df) {
+  forecasts <- data.frame(PCODE = character(), REGION = character(), 
+                          SVNC_EE = numeric(), SVNC_M = numeric())
+}
+
+shinyServer(
+  function(input, output) {
+    
+    output$regions <- renderUI({
+      selectInput(inputId = "regions", label = "Выберите субъект федерации", 
+                              choices = getRegions(input$pcode), multiple = TRUE)
+
+    })
+    
+    output$regions_forecast <- renderUI({
+      selectInput(inputId = "regions_forecast", label = "Выберите субъект федерации", 
+                  choices = getRegions(input$pcd_forecast))
+      
+    })
+    
+    output$fact_svnc <- renderPlot({ 
+      d <- getFactParticipant(input$pcode, input$regions)
+      if (input$grapIndicator == "СВНЦ на мощность") {
+        ggplot(d, aes(x = TDATE, y = SVNC_M, colour = P_R)) +
+          geom_line() + xlab("") + ylab("СВНЦ на мощность, руб./МВт") +
+          theme(text = element_text(size = 18), legend.position = 'bottom') 
+      } else {
+        ggplot(d, aes(x = TDATE, y = SVNC_EE, colour = P_R)) +
+          geom_line() + xlab("") + ylab("СВНЦ на электроэнергию, руб./МВт*ч") +
+          theme(text = element_text(size = 18), legend.position = 'bottom') 
+      }
+      
+    })
+    
+    output$svnc_table <- renderTable({
+      d <- getFactParticipant(input$pcode, input$regions)
+      d$TDATE <- format(d$TDATE,'%Y-%m-%d')
+      names(d) <- c("Дата", "Наименование участника", "Код участника - Регион", "СВНЦ на мощность, руб./МВт", "СВНЦ на электроэнергию, руб./МВт*ч")
+      d
+    })
+    
+    forecastTable <- eventReactive(input$launchForecast, {
+      singleForecast(input$pcd_forecast, input$regions_forecast)
+    })
+    
+    output$svnc_n_fcst <- renderTable({
+      x <- forecastTable()
+      x
+    })
+    
+  }
+)

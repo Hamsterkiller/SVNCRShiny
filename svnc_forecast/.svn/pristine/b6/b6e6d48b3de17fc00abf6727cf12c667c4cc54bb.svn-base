@@ -1,0 +1,35 @@
+\name{region_table}
+\alias{region_table}
+\docType{data}
+\title{
+%%   ~~ data name/kind ... ~~
+}
+\description{
+%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+}
+\usage{data("region_table")}
+\format{
+  A data frame with 73 observations on the following 6 variables.
+  \describe{
+    \item{\code{REG}}{a numeric vector}
+    \item{\code{REG_NAME}}{a character vector}
+    \item{\code{OES}}{a numeric vector}
+    \item{\code{OES_NAME}}{a character vector}
+    \item{\code{PZ}}{a numeric vector}
+    \item{\code{PZ_NAME}}{a character vector}
+  }
+}
+\details{
+%%  ~~ If necessary, more details than the __description__ above ~~
+}
+\source{
+%%  ~~ reference to a publication or URL from which the data were obtained ~~
+}
+\references{
+%%  ~~ possibly secondary sources and usages ~~
+}
+\examples{
+data(region_table)
+## maybe str(region_table) ; plot(region_table) ...
+}
+\keyword{datasets}

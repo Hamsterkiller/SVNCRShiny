@@ -1,0 +1,36 @@
+\name{box_ljung_t_M}
+\alias{box_ljung_t_M}
+\docType{data}
+\title{
+%%   ~~ data name/kind ... ~~
+}
+\description{
+%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+}
+\usage{data("box_ljung_t_M")}
+\format{
+  The format is:
+List of 5
+ $ statistic: Named num 19.9
+  ..- attr(*, "names")= chr "X-squared"
+ $ parameter: Named num 20
+  ..- attr(*, "names")= chr "df"
+ $ p.value  : num 0.466
+ $ method   : chr "Box-Ljung test"
+ $ data.name: chr "forecastHoltWinters_M$residuals"
+ - attr(*, "class")= chr "htest"
+}
+\details{
+%%  ~~ If necessary, more details than the __description__ above ~~
+}
+\source{
+%%  ~~ reference to a publication or URL from which the data were obtained ~~
+}
+\references{
+%%  ~~ possibly secondary sources and usages ~~
+}
+\examples{
+data(box_ljung_t_M)
+## maybe str(box_ljung_t_M) ; plot(box_ljung_t_M) ...
+}
+\keyword{datasets}

@@ -1,0 +1,9 @@
+imputeMean <-
+function(impute.var, filter.var, var.levels) {
+  for (v in var.levels) {
+    impute.var[ which(filter.var == v)] <- impute(impute.var[
+      which(filter.var == v)
+    ], fun = mean)
+  }
+  return (impute.var)
+}
